@@ -1,26 +1,1734 @@
-async function loadStudents() {
-    try {
-        const response = await fetch('/api/students');
-        const students = await response.json();
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Quản Trị Hệ Thống</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+            color: #2b3674;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: #ffffff;
+            height: 100vh;
+            position: fixed;
+            top: 0; left: 0;
+            display: flex; flex-direction: column;
+            border-right: 1px solid #e2e8f0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            padding: 24px 20px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .brand-icon {
+            background-color: #2563eb; color: white;
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+        .brand-text h5 { margin: 0; font-weight: 700; color: #1e3a8a; font-size: 1.1rem; }
+        .brand-text p { margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 500;}
+
+        .nav-menu { padding: 0 16px; flex-grow: 1; }
         
-        let html = '';
-        students.forEach(s => {
-            html += `
-                <tr>
-                    <td><span class="id-badge">${s.code}</span></td>
-                    <td><strong>${s.name}</strong></td>
-                    <td>${s.major}</td>
-                    <td>${s.cohort}</td>
-                    <td><span class="badge ${s.status === 1 ? 'bg-success' : 'bg-danger'}">${s.status === 1 ? 'Đang học' : 'Bị khóa'}</span></td>
+        .nav-pills .nav-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; color: #64748b;
+            text-decoration: none; font-weight: 500; font-size: 0.9rem;
+            border-radius: 8px; margin-bottom: 4px; transition: 0.2s; text-align: left;
+            width: 100%; background: transparent; border: none; cursor: pointer;
+        }
+        .nav-pills .nav-link:hover:not(.active) { background-color: #f1f5f9; color: #0f172a; }
+        .nav-pills .nav-link.active { background-color: #2563eb; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .nav-pills .nav-link i { font-size: 1.1rem; }
+
+        .sidebar-footer { padding: 16px; border-top: 1px dashed #e2e8f0; display: flex; flex-direction: column; gap: 4px;}
+        .footer-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; color: #64748b; font-weight: 500; font-size: 0.9rem;
+            border-radius: 8px; text-decoration: none; cursor: pointer;
+        }
+        .logout-btn { color: #ef4444; font-weight: 500; text-decoration: none; cursor: pointer; }
+        .logout-btn:hover { background-color: #fef2f2; color: #dc2626; }
+
+        .main-content { margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; }
+
+        .top-header {
+            background-color: #ffffff; padding: 12px 32px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .header-title-box h4 { margin: 0; font-weight: 700; color: #1e3a8a; font-size: 1.1rem; }
+        
+        .search-bar { width: 300px; margin-left: 30px;}
+        .search-bar .input-group-text { background: #f1f5f9; border: none; border-radius: 8px 0 0 8px; color: #94a3b8; }
+        .search-bar input { background: #f1f5f9; border: none; border-radius: 0 8px 8px 0; font-size: 0.85rem; box-shadow: none !important; }
+        
+        .header-actions { display: flex; align-items: center; gap: 20px; margin-left: auto; }
+        .header-actions i { font-size: 1.2rem; color: #64748b; cursor: pointer; }
+        .user-profile { display: flex; align-items: center; gap: 12px; border-left: 1px solid #e2e8f0; padding-left: 20px; }
+        .user-info { text-align: right; }
+        .user-info h6 { margin: 0; font-size: 0.85rem; font-weight: 600; color: #0f172a; }
+        .user-info p { margin: 0; font-size: 0.75rem; color: #64748b; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+
+        .dashboard-body { padding: 24px 32px; flex-grow: 1; }
+        
+        .custom-card {
+            background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
+            padding: 24px; height: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .stat-card { cursor: pointer; transition: all 0.2s ease; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
+        .stat-card-title { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card-value { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 8px 0; }
+        .stat-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .bg-light-primary { background-color: #eff6ff; color: #3b82f6; }
+        .bg-light-purple { background-color: #f3e8ff; color: #a855f7; }
+        .bg-light-warning { background-color: #fffbeb; color: #d97706; }
+        .bg-light-info { background-color: #f0f9ff; color: #0ea5e9; }
+        
+        .activity-list { padding: 0; margin: 0; list-style: none; }
+        .activity-item { display: flex; gap: 14px; margin-bottom: 20px; }
+        .activity-item:last-child { margin-bottom: 0; }
+        .activity-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.9rem; }
+        .activity-text { font-size: 0.85rem; color: #334155; line-height: 1.4; font-weight: 500; }
+        .activity-time { font-size: 0.7rem; color: #94a3b8; display: block; margin-top: 4px; font-weight: normal; }
+
+        .chart-placeholder { min-height: 250px; padding-top: 15px; display: flex; flex-direction: column; justify-content: center;}
+
+        .img-card {
+            background-size: cover; background-position: center; border-radius: 12px; padding: 24px; color: white; display: flex; flex-direction: column; justify-content: flex-end; min-height: 180px; position: relative; overflow: hidden; border: none;
+        }
+        .img-card::before { content: ''; position: absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.1)); z-index: 1; }
+        .img-card > * { position: relative; z-index: 2; }
+        .support-card { background: #1e40af; color: white; border-radius: 12px; padding: 24px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; }
+
+        .filter-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; background: #ffffff; }
+        .filter-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px; display: block; }
+        .filter-select { border: none; padding: 0; font-size: 0.9rem; font-weight: 500; color: #334155; box-shadow: none !important; background-color: transparent;}
+
+        .table-custom { margin-bottom: 0; border-collapse: separate; border-spacing: 0; }
+        .table-custom th, .table th { font-weight: 600; color: #64748b; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; padding: 14px; background-color: #f8fafc; letter-spacing: 0.5px; }
+        .table-custom td, .table td { padding: 14px; vertical-align: middle; color: #334155; }
+        .id-badge { background: #eff6ff; color: #3b82f6; font-weight: 600; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; }
+        .avatar-circle { width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75rem; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        .status-enrolled { background: #dcfce7; color: #166534; }
+        .status-enrolled::before { content: ''; display: block; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; }
+        .status-leave { background: #fef08a; color: #854d0e; }
+        .status-leave::before { content: ''; display: block; width: 6px; height: 6px; background: #ca8a04; border-radius: 50%; }
+        .grade-input { width: 70px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; }
+        .grade-input:focus { outline: none; border-color: #2563eb; }
+
+        .btn-purple { background-color: #8b5cf6; color: white; border: none; }
+        .btn-purple:hover { background-color: #7c3aed; color: white; }
+        .stat-donut {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: conic-gradient(#8b5cf6 0% 28%, #3b82f6 28% 73%, #94a3b8 73% 88%, #2563eb 88% 100%);
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .stat-donut::before {
+            content: ""; position: absolute; width: 90px; height: 90px;
+            background-color: white; border-radius: 50%;
+        }
+        .stat-donut-text { position: relative; z-index: 1; text-align: center; }
+        .stat-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .bar-chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 150px; background: #f8fafc; border-radius: 12px; padding: 15px; }
+        .bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 40px;}
+        .bar-fill { width: 100%; background-color: #dbeafe; border-radius: 4px 4px 0 0; transition: 0.3s; }
+        .bar-fill:hover, .bar-fill.active { background-color: #3b82f6; }
+        .blue-gradient-card { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon"><i class="bi bi-mortarboard-fill"></i></div>
+            <div class="brand-text">
+                <h5>EduManage</h5>
+                <p>Cổng Thông Tin Học Thuật</p>
+            </div>
+        </div>
+
+        <div class="nav-menu mt-2 nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            <button class="nav-link active" id="tab-dashboard" data-bs-toggle="pill" data-bs-target="#content-dashboard" type="button" role="tab" onclick="changeHeaderTitle('Tổng Quan Hệ Thống'); initDashboard();">
+                <i class="bi bi-grid-1x2"></i> Tổng Quan
+            </button>
+            <button class="nav-link" id="tab-students" data-bs-toggle="pill" data-bs-target="#content-students" type="button" role="tab" onclick="loadStudents(); changeHeaderTitle('Quản lý Sinh viên');">
+                <i class="bi bi-people"></i> Quản lý Sinh viên
+            </button>
+            <button class="nav-link" id="tab-lecturers" data-bs-toggle="pill" data-bs-target="#content-lecturers" type="button" role="tab" onclick="loadLecturers(); changeHeaderTitle('Quản lý Giảng viên');">
+                <i class="bi bi-person-workspace"></i> Quản lý Giảng viên
+            </button>
+            <button class="nav-link" id="tab-curriculum" data-bs-toggle="pill" data-bs-target="#content-curriculum" type="button" role="tab" onclick="loadCurriculumTabAdmin(); changeHeaderTitle('Chương trình Đào tạo');">
+                <i class="bi bi-journal-text"></i> Chương trình Đào tạo
+            </button>
+            <button class="nav-link" id="tab-courses" data-bs-toggle="pill" data-bs-target="#content-courses" type="button" role="tab" onclick="loadCourseTab(); changeHeaderTitle('Lớp Học Phần');">
+                <i class="bi bi-file-earmark-text"></i> Lớp Học Phần
+            </button>
+            <button class="nav-link" id="tab-grades" data-bs-toggle="pill" data-bs-target="#content-grades" type="button" role="tab" onclick="loadGradeClasses(); changeHeaderTitle('Quản lý Điểm số');">
+                <i class="bi bi-card-checklist"></i> Quản lý Điểm số
+            </button>
+            <button class="nav-link" id="tab-requests" data-bs-toggle="pill" data-bs-target="#content-requests" type="button" role="tab" onclick="loadRequests(); changeHeaderTitle('Xét duyệt Yêu cầu');">
+                <i class="bi bi-envelope-paper"></i> Xét duyệt Yêu cầu
+            </button>
+            <button class="nav-link" id="tab-statistics" data-bs-toggle="pill" data-bs-target="#content-statistics" type="button" role="tab" onclick="loadStatistics(); changeHeaderTitle('Báo cáo & Thống kê');">
+                <i class="bi bi-bar-chart-fill"></i> Thống kê Hệ thống
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <a class="logout-btn footer-link" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="d-flex align-items-center">
+                <div class="header-title-box"><h4 id="pageTitleMain">Tổng Quan Hệ Thống</h4></div>
+                <div class="search-bar input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" placeholder="Tìm kiếm nhanh...">
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <i class="bi bi-bell icon-btn"></i>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <h6>Quản trị viên</h6>
+                        <p>Quản trị viên hệ thống</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Avatar" class="avatar">
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-body tab-content" id="v-pills-tabContent">
+            
+            <div class="tab-pane fade show active" id="content-dashboard" role="tabpanel">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="custom-card stat-card" onclick="switchTab('tab-students')" title="Đến trang Quản lý Sinh viên">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="stat-card-title">TỔNG SINH VIÊN</div>
+                                    <div class="stat-card-value" id="dashTotalStudents">...</div>
+                                    <div class="small text-muted fw-medium"><i class="bi bi-info-circle"></i> Đang hoạt động & Bảo lưu</div>
+                                </div>
+                                <div class="stat-icon bg-light-primary"><i class="bi bi-people-fill"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="custom-card stat-card" onclick="switchTab('tab-lecturers')" title="Đến trang Quản lý Giảng viên">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="stat-card-title">TỔNG GIẢNG VIÊN</div>
+                                    <div class="stat-card-value" id="dashTotalLecturers">...</div>
+                                    <div class="small text-muted fw-medium"><i class="bi bi-info-circle"></i> Giảng viên toàn trường</div>
+                                </div>
+                                <div class="stat-icon bg-light-purple"><i class="bi bi-person-badge-fill"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="custom-card stat-card" onclick="switchTab('tab-courses')" title="Đến trang Môn học & Lớp học phần">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="stat-card-title">LỚP HỌC PHẦN</div>
+                                    <div class="stat-card-value" id="dashTotalClasses">...</div>
+                                    <div class="small text-muted fw-medium"><i class="bi bi-info-circle"></i> Số lớp đang mở</div>
+                                </div>
+                                <div class="stat-icon bg-light-warning"><i class="bi bi-journal-bookmark-fill"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="custom-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between align-items-center w-100 mb-2">
+                                        <div class="stat-card-title">TỈ LỆ ĐANG HỌC</div>
+                                        <div class="stat-icon bg-light-info"><i class="bi bi-graph-up-arrow"></i></div>
+                                    </div>
+                                    <div class="stat-card-value" id="dashEnrollRate">...</div>
+                                    <div class="progress" style="height: 6px; border-radius: 4px; background-color: #f1f5f9;">
+                                        <div class="progress-bar bg-primary" id="dashEnrollBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-8">
+                        <div class="custom-card d-flex flex-column h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="fw-bold m-0 text-dark">Phân bổ theo Khoa / Ngành</h5>
+                                    <p class="text-muted small mt-1 mb-0">Thống kê số lượng sinh viên theo chuyên ngành đào tạo</p>
+                                </div>
+                                <button class="btn btn-sm btn-light text-primary fw-bold" onclick="switchTab('tab-students')">Xem chi tiết</button>
+                            </div>
+                            <div class="chart-placeholder flex-grow-1" id="dashFacultyChart">
+                                <p class="text-muted text-center mt-4">Đang xử lý dữ liệu...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="custom-card h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold m-0 text-dark">Hoạt động gần đây</h5>
+                                <button class="btn btn-sm text-primary fw-bold p-0 border-0 bg-transparent" onclick="switchTab('tab-students')">Mở danh sách</button>
+                            </div>
+                            <ul class="activity-list" id="dashRecentActivities">
+                                <li class="text-muted small text-center mt-3">Đang đồng bộ dữ liệu...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="img-card shadow-sm" style="background-image: url('https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=600&q=80');">
+                            <h5 class="fw-bold mb-1">Cổng Sinh Viên</h5>
+                            <p class="small mb-0 opacity-75">Hệ thống đang hoạt động ổn định và sẵn sàng tiếp nhận lượt truy cập.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="img-card shadow-sm" style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=600&q=80');">
+                            <h5 class="fw-bold mb-1">Lưu trữ Dữ liệu</h5>
+                            <p class="small mb-0 opacity-75">Các tài nguyên và hồ sơ đang được đồng bộ hóa trên Cloud.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="support-card shadow-sm stat-card" onclick="switchTab('tab-requests')">
+                            <h5 class="fw-bold mb-2">Trung tâm Xét duyệt</h5>
+                            <p class="small mb-4 opacity-75">Nhấp vào đây để xem và duyệt các yêu cầu thay đổi thông tin từ người dùng.</p>
+                            <div>
+                                <button class="btn btn-light text-primary fw-bold px-4 py-2" style="border-radius: 8px;">Mở bảng Xét duyệt</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="content-students" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <div>
+                        <h3 class="fw-bold m-0 text-dark">Danh sách Sinh viên</h3>
+                        <p class="text-muted small mt-1 mb-0">Quản lý hồ sơ, thông tin học tập và trạng thái sinh viên toàn trường.</p>
+                    </div>
+                    <button class="btn btn-primary fw-medium px-4 py-2" style="border-radius: 8px;" onclick="openStudentModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Thêm Sinh viên mới
+                    </button>
+                </div>
+
+                <div class="d-flex gap-3 mb-4 flex-wrap">
+                    <div class="filter-box" style="width: 200px;">
+                        <label class="filter-label">KHOA / NGÀNH</label>
+                        <select id="facultyFilter" class="form-select filter-select" onchange="applyFilters()">
+                            <option value="all">Tất cả các Khoa</option>
+                        </select>
+                    </div>
+                    <div class="filter-box" style="width: 200px;">
+                        <label class="filter-label">LỚP HỌC</label>
+                        <select id="classFilter" class="form-select filter-select" onchange="applyFilters()">
+                            <option value="all">Tất cả các Lớp</option>
+                        </select>
+                    </div>
+                    <div class="filter-box d-flex align-items-center bg-light flex-grow-1">
+                        <i class="bi bi-search text-muted me-2"></i>
+                        <input type="text" id="searchInput" class="form-control bg-transparent border-0 p-0 shadow-none text-muted" style="font-size: 0.9rem;" placeholder="Lọc theo tên, MSSV..." oninput="applyFilters()">
+                    </div>
+                    <button id="clearFiltersBtn" class="btn btn-light fw-medium border text-muted" style="border-radius: 8px;" onclick="clearFilters()">Xóa bộ lọc</button>
+                </div>
+
+                <div class="custom-card p-0 mb-4 overflow-hidden shadow-sm">
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover m-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">MSSV</th>
+                                    <th>HỌ VÀ TÊN</th>
+                                    <th>NGÀY SINH</th>
+                                    <th>LỚP / KHOA</th>
+                                    <th>TRẠNG THÁI</th>
+                                    <th class="text-center">THAO TÁC</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center px-4 py-3 bg-light border-top">
+                        <span id="paginationInfo" class="text-muted" style="font-size: 0.85rem;">Đang tải dữ liệu...</span>
+                        <div id="paginationControls" class="d-flex gap-1 align-items-center"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="content-lecturers" role="tabpanel">
+                <div class="custom-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold m-0"><i class="bi bi-person-workspace text-success"></i> Danh sách Giảng viên</h5>
+                        <button class="btn btn-success btn-sm" onclick="openLecturerModal()"><i class="bi bi-plus-lg"></i> Thêm Giảng viên</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr><th class="ps-4">Mã GV</th><th>Họ và Tên</th><th>Trạng thái</th><th class="text-center">Thao tác</th></tr>
+                            </thead>
+                            <tbody id="lecturerTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="content-curriculum" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item text-muted small"><a href="#" class="text-decoration-none text-muted">Hệ thống</a></li>
+                            <li class="breadcrumb-item active small fw-bold text-primary" aria-current="page">Quản lý Chương trình</li>
+                            </ol>
+                        </nav>
+                        <h3 class="fw-bold m-0 text-dark">Quản lý Chương trình Đào tạo</h3>
+                        <p class="text-muted small mt-1 mb-0">Cấu trúc khung chương trình đào tạo chuẩn cho từng chuyên ngành.</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary fw-medium shadow-sm" data-bs-toggle="modal" data-bs-target="#addCurriculumModal"><i class="bi bi-plus-lg me-1"></i> Khung Đào tạo</button>
+                        <button class="btn btn-outline-primary fw-medium shadow-sm" onclick="openAddCourseToCurrModal()"><i class="bi bi-node-plus me-1"></i> Thêm Môn</button>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-4 col-md-5">
+                        <div class="custom-card mb-4 p-4 shadow-sm border-0" style="border-radius: 16px;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold m-0">Chọn Chuyên Ngành</h6>
+                                <i class="bi bi-sliders text-primary"></i>
+                            </div>
+                            <select id="currSelectAdmin" class="form-select mb-4 fw-medium text-dark bg-light border-0" style="padding: 12px; border-radius: 10px; font-size: 0.9rem;" onchange="renderCurriculumDetailsAdmin()">
+                                <option value="">-- Chọn ngành học --</option>
+                            </select>
+
+                            <div id="currSummaryInfo" class="d-none">
+                                <div class="d-flex justify-content-between border-bottom pb-3 mb-3">
+                                    <span class="text-primary fw-medium small">Tổng số tín chỉ:</span>
+                                    <span class="text-primary fw-bold bg-primary bg-opacity-10 px-2 py-1 rounded" id="infoCreditsAdmin">...</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-medium small" style="color: #8b5cf6;">Thời gian đào tạo:</span>
+                                    <span class="fw-bold px-2 py-1 rounded" style="color: #8b5cf6; background-color: #f3e8ff;" id="infoPeriodAdmin">...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="custom-card p-4 shadow-sm border-0" style="border-radius: 16px;">
+                            <h6 class="fw-bold mb-4 text-muted" style="font-size: 0.75rem; letter-spacing: 1px;">PHÂN BỔ KIẾN THỨC</h6>
+                            
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between small fw-medium mb-2">
+                                    <span class="text-dark">Đại cương</span><span id="pctGeneral">0%</span>
+                                </div>
+                                <div class="progress" style="height: 6px; border-radius: 4px; background: #f1f5f9;">
+                                    <div class="progress-bar" id="barGeneral" style="width: 0%; background-color: #3b82f6;"></div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between small fw-medium mb-2">
+                                    <span class="text-dark">Cơ sở ngành</span><span id="pctCore">0%</span>
+                                </div>
+                                <div class="progress" style="height: 6px; border-radius: 4px; background: #f1f5f9;">
+                                    <div class="progress-bar" id="barCore" style="width: 0%; background-color: #8b5cf6;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="d-flex justify-content-between small fw-medium mb-2">
+                                    <span class="text-dark">Chuyên ngành</span><span id="pctSpec">0%</span>
+                                </div>
+                                <div class="progress" style="height: 6px; border-radius: 4px; background: #f1f5f9;">
+                                    <div class="progress-bar" id="barSpec" style="width: 0%; background-color: #f59e0b;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8 col-md-7">
+                        <div class="custom-card h-100 p-0 shadow-sm border-0 d-flex flex-column" style="border-radius: 16px; overflow: hidden;">
+                            
+                            <div class="px-4 pt-3 border-bottom bg-white d-flex gap-4" id="moduleTabs">
+                                <button class="nav-link active fw-medium pb-2" style="color: #2563eb; border: none; border-bottom: 2px solid #2563eb; background: transparent;" onclick="filterModules('All', this)">Tất cả</button>
+                                <button class="nav-link fw-medium text-muted pb-2" style="border: none; border-bottom: 2px solid transparent; background: transparent;" onclick="filterModules('General Education', this)">Đại cương</button>
+                                <button class="nav-link fw-medium text-muted pb-2" style="border: none; border-bottom: 2px solid transparent; background: transparent;" onclick="filterModules('Core Knowledge', this)">Cơ sở ngành</button>
+                                <button class="nav-link fw-medium text-muted pb-2" style="border: none; border-bottom: 2px solid transparent; background: transparent;" onclick="filterModules('Specialization', this)">Chuyên ngành</button>
+                            </div>
+
+                            <div class="table-responsive flex-grow-1 p-0">
+                                <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                                    <thead class="bg-light text-muted" style="font-size: 0.8rem; font-weight: 700;">
+                                        <tr>
+                                            <th class="ps-4 py-3 border-0">Mã HP</th>
+                                            <th class="py-3 border-0">Tên học phần</th>
+                                            <th class="py-3 border-0 text-center">Tín chỉ</th>
+                                            <th class="py-3 border-0 text-center">Phân loại</th>
+                                            <th class="py-3 border-0">Học kỳ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="moduleTableBody">
+                                        <tr><td colspan="5" class="text-center py-5 text-muted">Vui lòng chọn khung chương trình đào tạo bên trái.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center px-4 py-3 bg-white border-top">
+                                <span id="modulePaginationInfo" class="text-muted small fw-medium">Hiển thị 0 - 0 trong tổng số 0 học phần</span>
+                                <div id="modulePaginationControls" class="d-flex gap-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="content-courses" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <div class="custom-card">
+                            <h6 class="fw-bold text-primary mb-3">Danh mục Môn học</h6>
+                            <form id="addCourseForm" class="d-flex gap-2 mb-3">
+                                <input type="text" id="cCode" class="form-control form-control-sm" placeholder="Mã môn" required>
+                                <input type="text" id="cName" class="form-control form-control-sm" placeholder="Tên môn" required>
+                                <input type="number" id="cCredits" class="form-control form-control-sm w-25" placeholder="Tín chỉ" required>
+                                <button type="submit" class="btn btn-primary btn-sm px-3"><i class="bi bi-plus-lg"></i></button>
+                            </form>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light position-sticky top-0">
+                                        <tr><th>Mã Môn</th><th>Tên môn</th><th class="text-center">Số TC</th><th>Xóa</th></tr>
+                                    </thead>
+                                    <tbody id="courseTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="custom-card">
+                            <h6 class="fw-bold text-success mb-3">Mở Lớp Học Phần (Phân công giảng dạy)</h6>
+                            <form id="addClassForm" class="row g-2 mb-3 align-items-end">
+                                <div class="col-md-3"><label class="small text-muted">Mã Lớp</label><input type="text" id="clCode" class="form-control form-control-sm" required></div>
+                                <div class="col-md-4"><label class="small text-muted">Môn học</label><select id="clCourse" class="form-select form-select-sm" required></select></div>
+                                <div class="col-md-5"><label class="small text-muted">Giảng viên</label><select id="clLecturer" class="form-select form-select-sm" required></select></div>
+                                <div class="col-md-3"><label class="small text-muted">Thứ</label><input type="text" id="clDay" class="form-control form-control-sm" placeholder="Thứ 2"></div>
+                                <div class="col-md-3"><label class="small text-muted">Ca học</label><input type="text" id="clTime" class="form-control form-control-sm" placeholder="Ca 1"></div>
+                                <div class="col-md-4"><label class="small text-muted">Phòng học</label><input type="text" id="clRoom" class="form-control form-control-sm" placeholder="A1-101"></div>
+                                <div class="col-md-2"><button type="submit" class="btn btn-success btn-sm w-100">Mở lớp</button></div>
+                            </form>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr><th>Mã Lớp</th><th>Môn học</th><th>Giảng viên</th><th class="text-center">Thao tác</th></tr>
+                                    </thead>
+                                    <tbody id="classTableBody2"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="content-grades" role="tabpanel">
+                <div class="custom-card">
+                    <div class="d-flex justify-content-between align-items-end mb-4">
+                        <div>
+                            <h5 class="fw-bold m-0"><i class="bi bi-file-earmark-spreadsheet text-info"></i> Nhập/Sửa Điểm Sinh Viên</h5>
+                            <p class="small text-muted mt-1">Chọn lớp học phần để tải danh sách sinh viên</p>
+                        </div>
+                        <select id="gradeClassSelect" class="form-select w-25" onchange="loadGrades()">
+                            <option value="">-- Đang tải... --</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered align-middle text-center">
+                            <thead class="table-light">
+                                <tr><th>MSSV</th><th class="text-start">Họ và Tên</th><th style="width: 12%;">Điểm Quá trình</th><th style="width: 12%;">Điểm Giữa kỳ</th><th style="width: 12%;">Điểm Cuối kỳ</th><th style="width: 15%;">Lưu Dữ Liệu</th></tr>
+                            </thead>
+                            <tbody id="gradeTableBody">
+                                <tr><td colspan="6" class="text-muted py-4">Vui lòng chọn lớp học phần ở góc trên bên phải.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="content-requests" role="tabpanel">
+                <div class="custom-card">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-envelope-paper text-warning"></i> Yêu Cầu Thay Đổi Thông Tin</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Mã số (MSSV/GV)</th>
+                                    <th>Họ tên mới</th>
+                                    <th>Ngày sinh mới</th>
+                                    <th>Email mới</th>
+                                    <th>SĐT mới</th>
+                                    <th class="text-center">Duyệt / Từ chối</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="content-statistics" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-end mb-4 pb-2 border-bottom">
+                    <div>
+                        <h3 class="fw-bold m-0 text-dark">Báo cáo & Thống kê</h3>
+                        <p class="text-muted small mt-1 mb-0">Theo dõi và phân tích dữ liệu học thuật toàn trường</p>
+                    </div>
+                    <div class="d-flex gap-3 align-items-end">
+                        <div>
+                            <label class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">Năm học</label>
+                            <select class="form-select form-select-sm border shadow-sm fw-medium text-dark bg-light px-3 py-2" style="border-radius: 8px;">
+                                <option>2023 - 2024</option>
+                                <option>2024 - 2025</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">Khoa / Ngành</label>
+                            <select class="form-select form-select-sm border shadow-sm fw-medium text-dark bg-light px-3 py-2" style="border-radius: 8px;" id="statDeptFilter" onchange="loadStatistics()">
+                                <option value="all">Tất cả các Khoa</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-purple shadow-sm fw-medium px-4 py-2" style="border-radius: 8px;" onclick="alert('Đang xuất báo cáo...')">
+                            <i class="bi bi-download me-1"></i> Xuất Báo Cáo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-5">
+                        <div class="custom-card border-0 shadow-sm p-4 h-100" style="border-radius: 16px;">
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <h6 class="fw-bold m-0 text-dark">Hiệu suất Học tập</h6>
+                                <i class="bi bi-info-circle text-muted" title="Dựa trên điểm trung bình tích lũy mới nhất"></i>
+                            </div>
+                            <div class="d-flex flex-column align-items-center justify-content-center pt-3">
+                                <div class="stat-donut mb-4">
+                                    <div class="stat-donut-text">
+                                        <h2 class="fw-bold text-primary m-0" id="statGoodExcelPct" style="font-size: 2rem;">--%</h2>
+                                        <span class="small text-muted fw-medium" style="font-size: 0.75rem;">Giỏi/Xuất sắc</span>
+                                    </div>
+                                </div>
+                                <div class="w-100 px-3">
+                                    <div class="row text-start g-3 small fw-medium">
+                                        <div class="col-6"><span class="stat-legend-dot" style="background-color: #2563eb;"></span>Xuất sắc (<span id="statPctEx">0</span>%)</div>
+                                        <div class="col-6"><span class="stat-legend-dot" style="background-color: #8b5cf6;"></span>Giỏi (<span id="statPctVg">0</span>%)</div>
+                                        <div class="col-6"><span class="stat-legend-dot" style="background-color: #3b82f6;"></span>Khá (<span id="statPctGd">0</span>%)</div>
+                                        <div class="col-6"><span class="stat-legend-dot" style="background-color: #94a3b8;"></span>Trung bình (<span id="statPctAv">0</span>%)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="custom-card border-0 shadow-sm p-4 h-100" style="border-radius: 16px;">
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h6 class="fw-bold m-0 text-dark" id="chartTitle">Tỉ lệ ra trường đúng hạn</h6>
+                                    <span class="small text-muted" id="chartSubTitle">Xu hướng qua các năm học</span>
+                                </div>
+                            </div>
+                            <div class="bar-chart-container mt-4 pt-4" id="barChartContainer">
+                                <div class="text-center w-100 text-muted py-4">Đang phân tích dữ liệu...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-7">
+                        <div class="custom-card border-0 shadow-sm p-4 h-100" style="border-radius: 16px;">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                                <h6 class="fw-bold m-0 text-dark">Nợ môn theo Khoa</h6>
+                                <span class="small text-muted fw-medium"><i class="bi bi-sort-down"></i> Tỉ lệ nợ môn</span>
+                            </div>
+                            
+                            <div id="statDebtBarsContainer">
+                                <p class="text-muted text-center py-3 small">Đang tính toán dữ liệu nợ môn...</p>
+                            </div>
+
+                            <div class="border-top pt-3 mt-4 d-flex justify-content-around text-center">
+                                <div><h5 class="fw-bold text-dark m-0" id="univDebtAvgVal">0%</h5><span class="small text-muted" style="font-size: 0.7rem;">Trung bình toàn trường</span></div>
+                                <div class="border-start"></div>
+                                <div><h5 class="fw-bold text-danger m-0" id="univDebtAvgDiff">0</h5><span class="small text-muted" style="font-size: 0.7rem;">Số SV Nợ môn</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 d-flex flex-column gap-4">
+                        <div class="custom-card border-0 shadow-sm p-4 blue-gradient-card flex-grow-1 d-flex flex-column justify-content-center" style="border-radius: 16px;">
+                            <div class="mb-3"><i class="bi bi-award fs-3 text-white opacity-75"></i></div>
+                            <h6 class="fw-bold text-white mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">SINH VIÊN CÓ THÀNH TÍCH TỐT NHẤT</h6>
+                            <h2 class="fw-bold text-white m-0 mb-2" id="statTopCount" style="font-size: 2.5rem;">0</h2>
+                            <span class="small text-white opacity-75">Tổng số sinh viên đạt Giỏi/Xuất sắc</span>
+                        </div>
+                        <div class="custom-card border-0 shadow-sm p-4 flex-grow-1 d-flex justify-content-between align-items-center bg-light" style="border-radius: 16px;">
+                            <div>
+                                <h6 class="fw-bold text-muted mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">HỒ SƠ CHỜ XÉT TỐT NGHIỆP</h6>
+                                <h2 class="fw-bold text-dark m-0 mb-2" id="statPendingCount" style="font-size: 2rem;">0</h2>
+                                <span class="small text-muted opacity-75">SV đã đủ 120 tín chỉ</span>
+                            </div>
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 48px; height: 48px; color: white;">
+                                <i class="bi bi-journal-check fs-5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="custom-card p-0 shadow-sm border-0 mb-4" style="border-radius: 16px; overflow: hidden;">
+                    <div class="p-4 border-bottom d-flex justify-content-between align-items-center bg-white">
+                        <h6 class="fw-bold m-0 text-dark">Top 10 Sinh viên theo GPA</h6>
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-funnel text-muted" style="cursor: pointer;"></i>
+                            <i class="bi bi-three-dots-vertical text-muted" style="cursor: pointer;"></i>
+                        </div>
+                    </div>
+                    <div class="table-responsive bg-white">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead class="bg-light text-muted" style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;">
+                                <tr>
+                                    <th class="ps-4 py-3 border-0">MSSV</th>
+                                    <th class="py-3 border-0">HỌ VÀ TÊN</th>
+                                    <th class="py-3 border-0">KHOA/NGÀNH</th>
+                                    <th class="py-3 border-0 text-center">ĐIỂM TB (GPA)</th>
+                                    <th class="py-3 border-0">XẾP LOẠI</th>
+                                    <th class="py-3 border-0 text-center">THAO TÁC</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statTopStudentsBody">
+                                <tr><td colspan="6" class="text-center py-5 text-muted">Đang phân tích dữ liệu hệ thống...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center py-3 bg-white border-top">
+                        <a href="#" class="small fw-bold text-primary text-decoration-none" onclick="switchTab('tab-students')">Xem Tất Cả Sinh Viên</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="modal fade" id="studentFormModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="studentModalTitle">Hồ sơ Sinh viên</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2" id="sPasswordAlert"><i class="bi bi-info-circle"></i> Mật khẩu mặc định: <strong>123456</strong></div>
+                    <form id="studentDataForm" class="row g-3">
+                        <input type="hidden" id="sFormAction"><input type="hidden" id="sEditId">
+                        <div class="col-md-4"><label class="form-label small fw-bold">Mã Sinh Viên *</label><input type="text" class="form-control" id="sCode" required></div>
+                        <div class="col-md-8"><label class="form-label small fw-bold">Họ và Tên *</label><input type="text" class="form-control" id="sName" required></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Email Đăng nhập *</label><input type="email" class="form-control" id="sEmail"></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Ngành học</label><input type="text" class="form-control" id="sMajor"></div>
+                        <div class="col-md-4"><label class="form-label small text-muted">Ngày sinh</label><input type="date" class="form-control" id="sDob"></div>
+                        <div class="col-md-4"><label class="form-label small text-muted">Giới tính</label><select class="form-select" id="sGender"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
+                        <div class="col-md-4"><label class="form-label small text-muted">Nơi sinh</label><input type="text" class="form-control" id="sPob"></div>
+                        <div class="col-md-4"><label class="form-label small text-muted">Khóa học / Lớp</label><input type="text" class="form-control" id="sCohort" placeholder="K62"></div>
+                        <div class="col-md-4"><label class="form-label small text-muted">Bậc đào tạo</label><input type="text" class="form-control" id="sEduLevel" placeholder="Đại học"></div>
+                        <div class="col-md-4"><label class="form-label small text-muted">Loại hình ĐT</label><input type="text" class="form-control" id="sTrainingType" placeholder="Chính quy"></div>
+                        <div class="col-12"><label class="form-label small text-muted">Chuyên ngành</label><input type="text" class="form-control" id="sSpecialization"></div>
+                        <div class="col-12 mt-4 text-end">
+                            <button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save"></i> Lưu dữ liệu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="lecturerFormModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-success text-white"><h5 class="modal-title fw-bold" id="lecturerModalTitle">Hồ sơ Giảng viên</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2" id="lPasswordAlert">Mật khẩu mặc định: <strong>123456</strong></div>
+                    <form id="lecturerDataForm" class="row g-3">
+                        <input type="hidden" id="lFormAction"><input type="hidden" id="lEditId">
+                        <div class="col-12"><label class="form-label small fw-bold">Mã Giảng Viên *</label><input type="text" class="form-control" id="lCode" required></div>
+                        <div class="col-12"><label class="form-label small fw-bold">Họ và Tên *</label><input type="text" class="form-control" id="lName" required></div>
+                        <div class="col-12"><label class="form-label small fw-bold">Email Đăng nhập *</label><input type="email" class="form-control" id="lEmail"></div>
+                        <div class="col-12 mt-4 text-end"><button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Hủy</button><button type="submit" class="btn btn-success px-4"><i class="bi bi-save"></i> Lưu dữ liệu</button></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="classStudentsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light"><h5 class="modal-title fw-bold text-primary" id="classStudentsTitle">Danh sách Lớp</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="enrollStudentForm" class="d-flex gap-2 mb-3 pb-3 border-bottom"><input type="hidden" id="enrollClassId"><select id="enrollStudentSelect" class="form-select form-select-sm" required></select><button type="submit" class="btn btn-primary btn-sm text-nowrap"><i class="bi bi-person-plus"></i> Thêm vào lớp</button></form>
+                    <table class="table table-sm table-hover align-middle"><thead class="table-light"><tr><th>MSSV</th><th class="text-start">Họ tên</th><th style="width: 50px;">Xóa</th></tr></thead><tbody id="classStudentsTableBody"></tbody></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addCurriculumModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5>Tạo Khung Đào Tạo Mới</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="addCurriculumForm">
+                        <input type="text" id="curId" class="form-control mb-2" placeholder="Mã Khung" required>
+                        <input type="text" id="curMajor" class="form-control mb-2" placeholder="Ngành Học" required>
+                        <input type="text" id="curIntake" class="form-control mb-2" placeholder="Khóa" required>
+                        <input type="number" id="curCredits" class="form-control mb-3" placeholder="Tổng tín chỉ" required>
+                        <button type="submit" class="btn btn-primary w-100">Khởi Tạo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="addCourseToCurrModal">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">Thêm Môn Vào Khung</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="addCourseToCurrForm">
+                        <input type="hidden" id="targetCurrId">
+                        <div class="mb-3"><label class="small fw-bold text-muted">Mã Môn Học</label><input type="text" id="ccCode" class="form-control" required></div>
+                        <div class="mb-3"><label class="small fw-bold text-muted">Tên Môn Học</label><input type="text" id="ccName" class="form-control" required></div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6"><label class="small fw-bold text-muted">Số Tín Chỉ</label><input type="number" id="ccCredits" class="form-control" required></div>
+                            <div class="col-6"><label class="small fw-bold text-muted">Học Kỳ (1-8)</label><input type="number" id="ccSemester" class="form-control" min="1" max="8" required></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold text-muted">Phân Loại Kiến Thức</label>
+                            <select id="ccCategory" class="form-select">
+                                <option value="General Education">Đại cương</option>
+                                <option value="Core Knowledge">Cơ sở ngành</option>
+                                <option value="Specialization">Chuyên ngành</option>
+                            </select>
+                        </div>
+                        <div class="mb-4"><label class="small fw-bold text-muted">Mã Môn Tiên Quyết</label><input type="text" id="ccPrereq" class="form-control" placeholder="Để trống nếu không có"></div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">Lưu Môn Học</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function logout() {
+            localStorage.removeItem('user_id'); 
+            window.location.href = '/'; 
+        }
+
+        function changeHeaderTitle(title) {
+            const pageTitle = document.getElementById('pageTitleMain');
+            if(pageTitle) pageTitle.innerText = title;
+        }
+
+        function switchTab(tabId) {
+            const triggerEl = document.querySelector('#' + tabId);
+            if(triggerEl) {
+                bootstrap.Tab.getOrCreateInstance(triggerEl).show();
+                triggerEl.click(); 
+                window.scrollTo(0,0);
+            }
+        }
+
+        function hideModal(modalId) { 
+            let modalEl = document.getElementById(modalId);
+            if(modalEl) { bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+        }
+
+        let currentStudentsData = [];
+        let filteredData = [];
+        let currentLecturersData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        async function initDashboard() {
+            try {
+                const [stRes, lecRes, clsRes] = await Promise.all([
+                    fetch('/api/students'),
+                    fetch('/api/lecturers'),
+                    fetch('/api/classes')
+                ]);
+                
+                const students = await stRes.json();
+                const lecturers = await lecRes.json();
+                const classes = await clsRes.json();
+
+                document.getElementById('dashTotalStudents').innerText = students.length.toLocaleString();
+                document.getElementById('dashTotalLecturers').innerText = lecturers.length.toLocaleString();
+                document.getElementById('dashTotalClasses').innerText = classes.length.toLocaleString();
+                
+                const enrolled = students.filter(s => s.status === 1).length;
+                const rate = students.length > 0 ? ((enrolled / students.length) * 100).toFixed(1) : 0;
+                document.getElementById('dashEnrollRate').innerText = rate + '%';
+                document.getElementById('dashEnrollBar').style.width = rate + '%';
+
+                const majorCounts = {};
+                students.forEach(s => {
+                    let m = s.major || 'Chưa phân khoa';
+                    majorCounts[m] = (majorCounts[m] || 0) + 1;
+                });
+                
+                const chartDiv = document.getElementById('dashFacultyChart');
+                chartDiv.innerHTML = '';
+                
+                if (Object.keys(majorCounts).length === 0) {
+                    chartDiv.innerHTML = '<p class="text-muted text-center w-100 mt-4">Chưa có dữ liệu sinh viên</p>';
+                } else {
+                    const maxCount = Math.max(...Object.values(majorCounts), 1);
+                    for(const [major, count] of Object.entries(majorCounts)) {
+                        let pct = (count / maxCount) * 100;
+                        chartDiv.innerHTML += `
+                            <div class="mb-3 w-100 px-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span>${major}</span><span class="text-primary">${count} SV</span>
+                                </div>
+                                <div class="progress" style="height: 8px; border-radius: 4px;">
+                                    <div class="progress-bar bg-primary" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                const activitiesDiv = document.getElementById('dashRecentActivities');
+                activitiesDiv.innerHTML = '';
+                if(students.length > 0) {
+                    const recent = students.slice(-4).reverse(); 
+                    recent.forEach((s, idx) => {
+                        let colors = ['bg-light-primary', 'bg-light-purple', 'bg-light-warning', 'bg-light-info'];
+                        let icons = ['bi-person-plus-fill', 'bi-mortarboard-fill', 'bi-file-earmark-text', 'bi-check-circle-fill'];
+                        activitiesDiv.innerHTML += `
+                            <li class="activity-item">
+                                <div class="activity-icon ${colors[idx % 4]}"><i class="bi ${icons[idx % 4]}"></i></div>
+                                <div class="activity-text">
+                                    Sinh viên <b>${s.name}</b> (${s.code}) vừa được thêm vào hệ thống.
+                                    <span class="activity-time">Mới cập nhật</span>
+                                </div>
+                            </li>
+                        `;
+                    });
+                } else {
+                    activitiesDiv.innerHTML = '<li class="text-muted small">Chưa có hoạt động nào trong cơ sở dữ liệu.</li>';
+                }
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const res = await fetch('/api/students'); 
+                currentStudentsData = await res.json(); 
+                filteredData = [...currentStudentsData]; 
+                populateFilters(); 
+                renderStudentTable(); 
+            } catch (err) { console.error(err); }
+        }
+
+        function renderStudentTable() {
+            const tbody = document.getElementById('studentTableBody'); 
+            if(!tbody) return; 
+            tbody.innerHTML = ''; 
+
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const pageData = filteredData.slice(startIdx, endIdx);
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Không tìm thấy sinh viên nào.</td></tr>';
+                updatePaginationUI(0, totalPages);
+                return;
+            }
+
+            pageData.forEach(i => {
+                let isEnrolled = i.status === 1;
+                let sb = isEnrolled ? 'status-enrolled' : 'status-leave';
+                let txtStr = isEnrolled ? 'Đang học' : 'Bảo lưu'; 
+                let lock = isEnrolled ? 'bi-unlock text-success' : 'bi-lock text-warning';
+                let initials = i.name ? i.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'SV';
+                let email = i.email || (i.code + '@university.edu.vn').toLowerCase();
+
+                tbody.innerHTML += `<tr>
+                    <td class="ps-4"><span class="id-badge">${i.code}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editStudent(${s.id})"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="lockAccount(${s.userId})"><i class="bi bi-lock"></i></button>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-circle">${initials}</div>
+                            <div>
+                                <h6 class="mb-0 fw-bold" style="font-size: 0.9rem;">${i.name}</h6>
+                                <small class="text-muted">${email}</small>
+                            </div>
+                        </div>
                     </td>
-                </tr>
-            `;
+                    <td class="text-muted" style="font-size: 0.9rem;">${i.dob || 'N/A'}</td>
+                    <td>
+                        <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.9rem;">${i.cohort || 'N/A'}</h6>
+                        <small class="text-muted" style="font-size: 0.75rem;">${i.major || 'Chưa cập nhật'}</small>
+                    </td>
+                    <td><span class="status-badge ${sb}">${txtStr}</span></td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary border-0" onclick="openStudentModal(${i.id})"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-outline-info border-0" onclick="resetPassword(${i.uid})"><i class="bi bi-key"></i></button>
+                        <button class="btn btn-sm btn-outline-secondary border-0" onclick="toggleLock(${i.uid})"><i class="bi ${lock}"></i></button>
+                        <button class="btn btn-sm btn-outline-danger border-0" onclick="delData('/api/students', ${i.id}, loadStudents)"><i class="bi bi-trash3"></i></button>
+                    </td>
+                </tr>`;
+            });
+
+            updatePaginationUI(filteredData.length, totalPages);
+        }
+
+        function applyFilters() {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const facultyVal = document.getElementById('facultyFilter').value;
+            const classVal = document.getElementById('classFilter').value;
+            
+            filteredData = currentStudentsData.filter(i => {
+                const matchSearch = i.name.toLowerCase().includes(searchVal) || i.code.toLowerCase().includes(searchVal);
+                const matchFaculty = (facultyVal === "all") || (i.major && i.major === facultyVal);
+                const matchClass = (classVal === "all") || (i.cohort && i.cohort === classVal);
+                return matchSearch && matchFaculty && matchClass;
+            });
+            
+            currentPage = 1; 
+            renderStudentTable();
+        }
+
+        function populateFilters() {
+            const facultySelect = document.getElementById('facultyFilter');
+            const classSelect = document.getElementById('classFilter');
+            
+            if (facultySelect) {
+                const majors = [...new Set(currentStudentsData.map(s => s.major).filter(Boolean))];
+                facultySelect.innerHTML = '<option value="all">Tất cả các Khoa</option>';
+                majors.forEach(m => { facultySelect.innerHTML += `<option value="${m}">${m}</option>`; });
+            }
+
+            if (classSelect) {
+                const classes = [...new Set(currentStudentsData.map(s => s.cohort).filter(Boolean))];
+                classSelect.innerHTML = '<option value="all">Tất cả các Lớp</option>';
+                classes.forEach(c => { classSelect.innerHTML += `<option value="${c}">${c}</option>`; });
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('facultyFilter').value = 'all';
+            document.getElementById('classFilter').value = 'all';
+            applyFilters();
+        }
+
+        function updatePaginationUI(totalItems, totalPages) {
+            const info = document.getElementById('paginationInfo');
+            const controls = document.getElementById('paginationControls');
+            if(!info || !controls) return;
+
+            let start = (currentPage - 1) * itemsPerPage + 1;
+            let end = Math.min(currentPage * itemsPerPage, totalItems);
+            if(totalItems === 0) { start = 0; end = 0; }
+            
+            info.innerText = `Hiển thị ${start}-${end} trong tổng số ${totalItems} sinh viên`;
+
+            let html = `<button class="btn btn-sm btn-light text-muted border-0" onclick="changePage(${currentPage - 1})" ${currentPage === 1 || totalPages === 0 ? 'disabled' : ''}><i class="bi bi-chevron-left"></i></button>`;
+            
+            for(let i = 1; i <= totalPages; i++) {
+                if(i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    let activeCls = i === currentPage ? 'btn-primary rounded-1 px-3' : 'btn-light border-0';
+                    html += `<button class="btn btn-sm ${activeCls}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<span class="text-muted mx-1">...</span>`;
+                }
+            }
+
+            html += `<button class="btn btn-sm btn-light text-muted border-0" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}><i class="bi bi-chevron-right"></i></button>`;
+            controls.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderStudentTable();
+        }
+
+        function openStudentModal(id = null) {
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('studentFormModal')); 
+            document.getElementById('studentDataForm').reset();
+            let emailInput = document.getElementById('sEmail');
+            if (id) {
+                document.getElementById('sFormAction').value = 'edit'; 
+                document.getElementById('studentModalTitle').innerHTML = 'Cập Nhật Hồ Sơ Sinh Viên';
+                emailInput.setAttribute('readonly', 'true'); emailInput.classList.add('bg-light'); document.getElementById('sPasswordAlert').style.display = 'none'; 
+                const st = currentStudentsData.find(s => s.id === id);
+                if(st) {
+                    document.getElementById('sEditId').value = st.id; document.getElementById('sCode').value = st.code; document.getElementById('sName').value = st.name;
+                    emailInput.value = st.email || ''; document.getElementById('sDob').value = st.dob || ''; document.getElementById('sGender').value = st.gender || 'Nam'; 
+                    document.getElementById('sPob').value = st.pob || ''; document.getElementById('sMajor').value = st.major || ''; document.getElementById('sCohort').value = st.cohort || ''; 
+                    document.getElementById('sEduLevel').value = st.edu_level || ''; document.getElementById('sTrainingType').value = st.training_type || ''; document.getElementById('sSpecialization').value = st.specialization || '';
+                }
+            } else {
+                document.getElementById('sFormAction').value = 'add'; 
+                document.getElementById('studentModalTitle').innerHTML = 'Thêm Mới Sinh Viên';
+                emailInput.removeAttribute('readonly'); emailInput.classList.remove('bg-light'); emailInput.setAttribute('required', 'true'); 
+                document.getElementById('sPasswordAlert').style.display = 'block'; 
+            }
+            modal.show();
+        }
+
+        document.getElementById('studentDataForm').addEventListener('submit', async e => {
+            e.preventDefault(); 
+            const action = document.getElementById('sFormAction').value;
+            const payload = {
+                code: document.getElementById('sCode').value, name: document.getElementById('sName').value, dob: document.getElementById('sDob').value,
+                gender: document.getElementById('sGender').value, pob: document.getElementById('sPob').value, major: document.getElementById('sMajor').value,
+                cohort: document.getElementById('sCohort').value, edu_level: document.getElementById('sEduLevel').value, training_type: document.getElementById('sTrainingType').value, specialization: document.getElementById('sSpecialization').value
+            };
+            try {
+                if (action === 'add') {
+                    payload.email = document.getElementById('sEmail').value; 
+                    let res = await fetch('/api/students', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+                    if(!res.ok) { alert("Lỗi: Tài khoản Email đã tồn tại hoặc CSDL cũ chưa xóa!"); return; }
+                    alert("Đã thêm sinh viên thành công!");
+                } else {
+                    payload.id = document.getElementById('sEditId').value; 
+                    await fetch('/api/students', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                    alert("Đã cập nhật sinh viên thành công!");
+                }
+                hideModal('studentFormModal'); loadStudents(); initDashboard();
+            } catch (err) { alert("Lỗi hệ thống: Vui lòng xem lại API/CSDL."); }
         });
-        document.getElementById('studentTableBody').innerHTML = html;
-    } catch (error) {
-        console.error("Lỗi tải danh sách sinh viên:", error);
-    }
-}
+
+        async function loadLecturers() {
+            try {
+                const res = await fetch('/api/lecturers'); currentLecturersData = await res.json(); 
+                
+                const tbody = document.getElementById('lecturerTableBody'); if(!tbody) return; tbody.innerHTML = '';
+                currentLecturersData.forEach(i => {
+                    let sb = i.status === 1 ? '<span class="badge bg-success bg-opacity-10 text-success border border-success">Hoạt động</span>' : '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Đã khóa</span>';
+                    let lock = i.status === 1 ? 'bi-unlock text-success' : 'bi-lock text-warning';
+                    tbody.innerHTML += `<tr>
+                        <td class="ps-4 fw-bold text-success">${i.code}</td><td class="fw-medium">${i.name}</td><td>${sb}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-success border-0" onclick="openLecturerModal(${i.id})"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-sm btn-outline-info border-0" onclick="resetPassword(${i.uid})"><i class="bi bi-key"></i></button>
+                            <button class="btn btn-sm btn-outline-secondary border-0" onclick="toggleLock(${i.uid})"><i class="bi ${lock}"></i></button>
+                            <button class="btn btn-sm btn-outline-danger border-0" onclick="delData('/api/lecturers', ${i.id}, loadLecturers)"><i class="bi bi-trash3"></i></button>
+                        </td>
+                    </tr>`;
+                });
+            } catch(e){}
+        }
+
+        function openLecturerModal(id = null) {
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('lecturerFormModal')); 
+            document.getElementById('lecturerDataForm').reset(); let emailInput = document.getElementById('lEmail');
+            if (id) {
+                document.getElementById('lFormAction').value = 'edit'; 
+                document.getElementById('lecturerModalTitle').innerHTML = 'Cập Nhật Hồ Sơ Giảng Viên';
+                emailInput.setAttribute('readonly', 'true'); emailInput.classList.add('bg-light'); document.getElementById('lPasswordAlert').style.display = 'none'; 
+                const lec = currentLecturersData.find(l => l.id === id); 
+                if(lec) { document.getElementById('lEditId').value = lec.id; document.getElementById('lCode').value = lec.code; document.getElementById('lName').value = lec.name; emailInput.value = lec.email || ''; }
+            } else {
+                document.getElementById('lFormAction').value = 'add'; 
+                document.getElementById('lecturerModalTitle').innerHTML = 'Thêm Mới Giảng Viên';
+                emailInput.removeAttribute('readonly'); emailInput.classList.remove('bg-light'); emailInput.setAttribute('required', 'true'); document.getElementById('lPasswordAlert').style.display = 'block'; 
+            }
+            modal.show();
+        }
+
+        document.getElementById('lecturerDataForm').addEventListener('submit', async e => {
+            e.preventDefault(); 
+            const action = document.getElementById('lFormAction').value; 
+            const payload = { code: document.getElementById('lCode').value, name: document.getElementById('lName').value };
+            try {
+                if (action === 'add') {
+                    payload.email = document.getElementById('lEmail').value; 
+                    let res = await fetch('/api/lecturers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+                    if(!res.ok) { alert("Lỗi: Tài khoản Email đã tồn tại hoặc CSDL cũ chưa xóa!"); return; }
+                    alert("Đã thêm Giảng viên thành công!");
+                } else {
+                    payload.id = document.getElementById('lEditId').value; 
+                    await fetch('/api/lecturers', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                    alert("Đã cập nhật Giảng viên thành công!");
+                }
+                hideModal('lecturerFormModal'); loadLecturers(); initDashboard();
+            } catch(err){ alert("Lỗi hệ thống: Vui lòng xem lại API."); }
+        });
+
+        async function delData(url, id, callback) { if(confirm('Xác nhận xóa khỏi hệ thống?')) { await fetch(`${url}?id=${id}`, {method: 'DELETE'}); if(callback) callback(); initDashboard(); } }
+        async function toggleLock(uid) { await fetch('/api/users/toggle_lock', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ uid: uid.toString() }) }); loadStudents(); loadLecturers(); }
+        async function resetPassword(uid) { if(confirm('Đặt lại mật khẩu về 123456?')) { await fetch('/api/users/reset_password', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ uid: uid.toString() }) }); alert("Đã đặt về mặc định!"); } }
+
+        let currentCurrModules = [];
+        let activeModuleFilter = 'All';
+        let moduleCurrentPage = 1;
+        const modulesPerPage = 5;
+
+        async function loadCurriculumTabAdmin() {
+            try {
+                let curriculums = await (await fetch('/api/curriculums')).json();
+                let sel = document.getElementById('currSelectAdmin');
+                if(sel) {
+                    sel.innerHTML = '<option value="">-- Chọn ngành học --</option>' + 
+                    curriculums.map(c => `<option value="${c.id}">${c.major}</option>`).join('');
+                }
+                document.getElementById('currSummaryInfo').classList.add('d-none');
+                document.getElementById('moduleTableBody').innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Vui lòng chọn khung chương trình.</td></tr>';
+            } catch(e){}
+        }
+
+        async function renderCurriculumDetailsAdmin() {
+            let currId = document.getElementById('currSelectAdmin').value;
+            if(!currId) { 
+                document.getElementById('currSummaryInfo').classList.add('d-none');
+                document.getElementById('moduleTableBody').innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Vui lòng chọn khung chương trình.</td></tr>';
+                return; 
+            }
+            
+            let curriculums = await (await fetch('/api/curriculums')).json();
+            let currentCurr = curriculums.find(c => c.id == currId);
+            if(currentCurr) {
+                document.getElementById('infoCreditsAdmin').innerText = currentCurr.total_credits + " Tín chỉ";
+                document.getElementById('infoPeriodAdmin').innerText = "4 Năm (8 Học kỳ)";
+                document.getElementById('currSummaryInfo').classList.remove('d-none');
+            }
+            
+            let rawModules = await (await fetch(`/api/curriculum/courses?curriculum_id=${currId}`)).json();
+            
+            currentCurrModules = rawModules.map(c => {
+                let cat = c.category;
+                if(!cat) {
+                    if (c.semester <= 2) cat = "General Education";
+                    else if (c.semester >= 6 || c.is_elective === 1) cat = "Specialization";
+                    else cat = "Core Knowledge";
+                }
+                return { ...c, category: cat };
+            });
+
+            let total = currentCurrModules.length || 1;
+            let gen = currentCurrModules.filter(c => c.category === "General Education").length;
+            let core = currentCurrModules.filter(c => c.category === "Core Knowledge").length;
+            let spec = currentCurrModules.filter(c => c.category === "Specialization").length;
+            
+            const setProg = (idText, idBar, val, tot) => {
+                let pct = Math.round((val/tot)*100);
+                document.getElementById(idText).innerText = pct + '%';
+                document.getElementById(idBar).style.width = pct + '%';
+            };
+            
+            setProg('pctGeneral', 'barGeneral', gen, total);
+            setProg('pctCore', 'barCore', core, total);
+            setProg('pctSpec', 'barSpec', spec, total);
+
+            let allBtn = document.querySelector('#moduleTabs button:first-child');
+            filterModules('All', allBtn);
+        }
+
+        function filterModules(category, btnElement) {
+            activeModuleFilter = category;
+            moduleCurrentPage = 1; 
+            
+            if(btnElement) {
+                document.querySelectorAll('#moduleTabs button').forEach(btn => {
+                    btn.classList.remove('active', 'text-primary');
+                    btn.classList.add('text-muted');
+                    btn.style.borderColor = 'transparent';
+                    btn.style.color = '#6c757d';
+                });
+                btnElement.classList.add('active');
+                btnElement.classList.remove('text-muted');
+                btnElement.style.color = '#2563eb';
+                btnElement.style.borderBottomColor = '#2563eb';
+            }
+
+            renderModuleTable();
+        }
+
+        function renderModuleTable() {
+            let filtered = currentCurrModules;
+            if(activeModuleFilter !== 'All') {
+                filtered = currentCurrModules.filter(c => c.category === activeModuleFilter);
+            }
+
+            let tbody = document.getElementById('moduleTableBody');
+            tbody.innerHTML = '';
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Không có môn học nào thuộc danh mục này.</td></tr>';
+                document.getElementById('modulePaginationInfo').innerText = `Hiển thị 0 - 0 trong tổng số 0 học phần`;
+                document.getElementById('modulePaginationControls').innerHTML = '';
+                return;
+            }
+
+            let totalPages = Math.ceil(filtered.length / modulesPerPage);
+            let startIdx = (moduleCurrentPage - 1) * modulesPerPage;
+            let endIdx = Math.min(startIdx + modulesPerPage, filtered.length);
+            let pageData = filtered.slice(startIdx, endIdx);
+
+            pageData.forEach(c => {
+                let badgeStyle = '';
+                let catDisplay = c.category;
+                if(c.category === 'General Education') { badgeStyle = 'background-color: #e0e7ff; color: #4f46e5;'; catDisplay = 'Đại cương'; }
+                else if(c.category === 'Core Knowledge') { badgeStyle = 'background-color: #f3e8ff; color: #9333ea;'; catDisplay = 'Cơ sở ngành'; }
+                else { badgeStyle = 'background-color: #ffedd5; color: #ea580c;'; catDisplay = 'Chuyên ngành'; }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="ps-4 fw-bold text-muted">${c.code}</td>
+                        <td class="text-dark fw-medium" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.name}">${c.name}</td>
+                        <td class="text-center fw-bold text-dark">${c.credits}</td>
+                        <td class="text-center"><span class="badge" style="${badgeStyle} border-radius: 20px; padding: 6px 14px; font-weight: 600;">${catDisplay}</span></td>
+                        <td class="text-muted fw-medium">Học kỳ ${c.semester}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('modulePaginationInfo').innerText = `Hiển thị ${startIdx + 1} - ${endIdx} trong tổng số ${filtered.length} học phần`;
+            
+            let pControls = document.getElementById('modulePaginationControls');
+            pControls.innerHTML = `<button class="btn btn-sm bg-light text-muted border-0 me-1" onclick="changeModulePage(${moduleCurrentPage - 1})" ${moduleCurrentPage === 1 ? 'disabled' : ''}><i class="bi bi-chevron-left"></i></button>`;
+            
+            for(let i=1; i<=totalPages; i++) {
+                let btnCls = i === moduleCurrentPage ? 'btn-primary' : 'bg-transparent text-muted border-0';
+                pControls.innerHTML += `<button class="btn btn-sm ${btnCls} mx-1" style="width: 32px; height: 32px;" onclick="changeModulePage(${i})">${i}</button>`;
+            }
+            
+            pControls.innerHTML += `<button class="btn btn-sm bg-light text-muted border-0 ms-1" onclick="changeModulePage(${moduleCurrentPage + 1})" ${moduleCurrentPage === totalPages ? 'disabled' : ''}><i class="bi bi-chevron-right"></i></button>`;
+        }
+
+        function changeModulePage(page) {
+            moduleCurrentPage = page;
+            renderModuleTable();
+        }
+
+        document.getElementById('addCurriculumForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const payload = { curriculum_id: document.getElementById('curId').value, major: document.getElementById('curMajor').value, academic_intake: document.getElementById('curIntake').value, total_credits: document.getElementById('curCredits').value };
+            await fetch('/api/curriculums', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            alert("Đã tạo Khung đào tạo thành công!");
+            hideModal('addCurriculumModal'); loadCurriculumTabAdmin();
+        });
+
+        function openAddCourseToCurrModal() {
+            let currId = document.getElementById('currSelectAdmin').value;
+            if(!currId) { alert("Vui lòng chọn một Chương trình đào tạo trước khi thêm Môn học!"); return; }
+            document.getElementById('targetCurrId').value = currId;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addCourseToCurrModal')).show();
+        }
+
+        document.getElementById('addCourseToCurrForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const isElectiveVal = document.getElementById('ccCategory').value === 'Specialization' ? 1 : 0;
+            
+            const payload = { 
+                curriculum_id: document.getElementById('targetCurrId').value, 
+                course_code: document.getElementById('ccCode').value, 
+                course_name: document.getElementById('ccName').value, 
+                credits: document.getElementById('ccCredits').value, 
+                semester: document.getElementById('ccSemester').value, 
+                is_elective: isElectiveVal, 
+                category: document.getElementById('ccCategory').value,
+                prerequisite: document.getElementById('ccPrereq').value 
+            };
+            
+            await fetch('/api/curriculum/courses', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            alert("Đã thêm môn học vào khung chương trình!");
+            document.getElementById('addCourseToCurrForm').reset();
+            hideModal('addCourseToCurrModal'); 
+            renderCurriculumDetailsAdmin(); 
+        });
+
+        async function loadCourseTab() {
+            try {
+                let data1 = await (await fetch('/api/courses')).json();
+                let tbody1 = document.getElementById('courseTableBody'); 
+                if(tbody1) tbody1.innerHTML = data1.map(c => `<tr><td class="fw-bold">${c.code}</td><td>${c.name}</td><td class="text-center">${c.credits}</td><td class="text-center"><button class="btn btn-sm text-danger border-0" onclick="delData('/api/courses', ${c.id}, loadCourseTab)"><i class="bi bi-trash"></i></button></td></tr>`).join('');
+                
+                let data2 = await (await fetch('/api/classes')).json();
+                let tbody2 = document.getElementById('classTableBody2'); 
+                if(tbody2) tbody2.innerHTML = data2.map(c => `<tr><td><b>${c.code}</b></td><td>${c.course}</td><td><i class="bi bi-person-fill text-muted"></i> ${c.lecturer}</td><td class="text-center"><button class="btn btn-sm btn-outline-primary border-0" title="Danh sách SV" onclick="openClassStudentsModal(${c.id}, '${c.code}')"><i class="bi bi-people-fill"></i></button><button class="btn btn-sm text-danger border-0" onclick="delData('/api/classes', ${c.id}, loadCourseTab)"><i class="bi bi-trash"></i></button></td></tr>`).join('');
+                
+                let lecs = await (await fetch('/api/lecturers')).json();
+                let cSel = document.getElementById('clCourse'); if(cSel) cSel.innerHTML = data1.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                let lSel = document.getElementById('clLecturer'); if(lSel) lSel.innerHTML = lecs.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+            } catch(e){}
+        }
+
+        document.getElementById('addCourseForm').addEventListener('submit', async e => {
+            e.preventDefault(); 
+            const payload = { code: document.getElementById('cCode').value, name: document.getElementById('cName').value, credits: document.getElementById('cCredits').value };
+            
+            let res = await fetch('/api/courses', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+            
+            if (res.ok) {
+                alert("Đã tạo Môn học thành công!");
+                document.getElementById('addCourseForm').reset(); 
+                loadCourseTab(); 
+            } else {
+                let errorData = await res.json();
+                alert("LỖI: " + (errorData.message || "Không thể tạo môn học."));
+            }
+        });
+
+        document.getElementById('addClassForm').addEventListener('submit', async e => {
+            e.preventDefault(); 
+            const payload = { code: document.getElementById('clCode').value, course_id: document.getElementById('clCourse').value, lecturer_id: document.getElementById('clLecturer').value, schedule_day: document.getElementById('clDay').value, schedule_time: document.getElementById('clTime').value, room: document.getElementById('clRoom').value }; 
+            
+            let res = await fetch('/api/classes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+            
+            if (res.ok) {
+                alert("Đã phân công Lớp học phần thành công!");
+                document.getElementById('addClassForm').reset(); 
+                loadCourseTab(); 
+                initDashboard();
+            } else {
+                let errorData = await res.json();
+                alert("LỖI: " + (errorData.message || "Không thể mở lớp học phần."));
+            }
+        });
+
+        async function openClassStudentsModal(classId, classCode) {
+            document.getElementById('enrollClassId').value = classId; document.getElementById('classStudentsTitle').innerText = `Danh sách SV - Lớp ${classCode}`;
+            let students = await (await fetch('/api/students')).json();
+            document.getElementById('enrollStudentSelect').innerHTML = students.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+            loadClassStudentsList(classId);
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('classStudentsModal')).show();
+        }
+
+        async function loadClassStudentsList(classId) {
+            let data = await (await fetch(`/api/enrollments?class_id=${classId}`)).json();
+            let tbody = document.getElementById('classStudentsTableBody'); tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-muted py-3 text-center">Chưa có sinh viên.</td></tr>'; return; }
+            data.forEach(item => { tbody.innerHTML += `<tr><td class="fw-bold text-primary">${item.code}</td><td class="text-start">${item.name}</td><td><button class="btn btn-sm btn-outline-danger border-0" onclick="removeStudentFromClass(${item.enroll_id}, ${classId})"><i class="bi bi-x-circle-fill"></i></button></td></tr>`; });
+        }
+
+        document.getElementById('enrollStudentForm').addEventListener('submit', async e => {
+            e.preventDefault(); 
+            let classId = document.getElementById('enrollClassId').value; let studentId = document.getElementById('enrollStudentSelect').value; 
+            await fetch('/api/enrollments', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ class_id: classId, student_id: studentId }) }); 
+            loadClassStudentsList(classId); 
+        });
+
+        async function removeStudentFromClass(enrollId, classId) { if(confirm('Xóa sinh viên khỏi lớp?')) { await fetch(`/api/enrollments?id=${enrollId}`, { method: 'DELETE' }); loadClassStudentsList(classId); } }
+
+        async function loadGradeClasses() { 
+            try { 
+                let classes = await (await fetch('/api/classes')).json(); 
+                document.getElementById('gradeClassSelect').innerHTML = '<option value="">-- Chọn lớp học phần --</option>' + classes.map(c => `<option value="${c.id}">[${c.code}] ${c.course}</option>`).join(''); 
+            } catch(e){} 
+        }
+        
+        async function loadGrades() {
+            let classId = document.getElementById('gradeClassSelect').value; let tbody = document.getElementById('gradeTableBody');
+            if(!classId) { tbody.innerHTML = '<tr><td colspan="6" class="text-muted py-4">Vui lòng chọn lớp học phần</td></tr>'; return; }
+            let data = await (await fetch(`/api/enrollments?class_id=${classId}`)).json();
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-warning py-4">Lớp chưa có sinh viên.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.forEach(item => { tbody.innerHTML += `<tr><td class="fw-bold">${item.code}</td><td class="text-start fw-medium">${item.name}</td><td><input type="number" step="0.1" id="p_${item.enroll_id}" class="grade-input" value="${item.process}"></td><td><input type="number" step="0.1" id="m_${item.enroll_id}" class="grade-input" value="${item.mid}"></td><td><input type="number" step="0.1" id="f_${item.enroll_id}" class="grade-input" value="${item.final}"></td><td><button class="btn btn-sm btn-primary px-3" onclick="saveGrade(${item.enroll_id})"><i class="bi bi-floppy"></i> Cập nhật</button></td></tr>`; });
+        }
+        
+        async function saveGrade(enrollId) { 
+            let p = document.getElementById(`p_${enrollId}`).value, m = document.getElementById(`m_${enrollId}`).value, f = document.getElementById(`f_${enrollId}`).value; 
+            await fetch('/api/update_grade', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ enroll_id: enrollId.toString(), process: p, mid: m, final: f }) }); 
+            let btn = document.querySelector(`button[onclick="saveGrade(${enrollId})"]`); 
+            btn.innerHTML = '<i class="bi bi-check2-all"></i> Đã lưu'; btn.classList.replace('btn-primary', 'btn-success'); 
+            setTimeout(() => { btn.innerHTML = '<i class="bi bi-floppy"></i> Cập nhật'; btn.classList.replace('btn-success', 'btn-primary'); }, 2000); 
+        }
+
+        async function loadRequests() {
+            try {
+                const response = await fetch('/api/requests');
+                const data = await response.json(); 
+                const tbody = document.getElementById('requestTableBody'); 
+                
+                if(!tbody) return; 
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Chưa có yêu cầu nào.</td></tr>'; 
+                    return; 
+                }
+                
+                data.forEach(i => { 
+                    const newName = i.new_name ? `<span class="text-primary fw-bold">${i.new_name}</span>` : '<span class="text-muted small">Không đổi</span>';
+                    const newDob = i.new_dob ? `<span class="text-primary fw-bold">${i.new_dob}</span>` : '<span class="text-muted small">Không đổi</span>';
+                    const newEmail = i.new_email ? `<span class="text-primary fw-bold">${i.new_email}</span>` : '<span class="text-muted small">Không đổi</span>';
+                    const newPhone = i.new_phone ? `<span class="text-primary fw-bold">${i.new_phone}</span>` : '<span class="text-muted small">Không đổi</span>';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">${i.code || 'N/A'}</td>
+                            <td>${newName}</td>
+                            <td>${newDob}</td>
+                            <td>${newEmail}</td>
+                            <td>${newPhone}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-success shadow-sm me-1" onclick="handleRequest(${i.req_id}, 'approve')">
+                                    <i class="bi bi-check-lg"></i> Duyệt
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="handleRequest(${i.req_id}, 'reject')">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `; 
+                });
+            } catch(e) {}
+        }
+
+        // ================================================================
+        // HÀM LOAD STATISTICS ĐÃ ĐƯỢC CẬP NHẬT ĐỂ TÍNH SỐ LIỆU THẬT 100%
+        // ================================================================
+        async function loadStatistics() {
+            try {
+                // 1. Tải danh sách Sinh viên
+                const students = await fetch('/api/students').then(r=>r.json()).catch(()=>[]);
+                
+                // 2. Tải tất cả điểm của mọi sinh viên (Bằng cách lặp qua API cá nhân)
+                let studentStats = {};
+                
+                // Khởi tạo bộ đếm cho từng SV
+                students.forEach(s => {
+                    studentStats[s.id] = { totalPoints: 0, totalCredits: 0, earnedCredits: 0, failCount: 0, gpa: 0, major: s.major || 'Chưa phân khoa', cohort: s.cohort || 'Chưa rõ' };
+                });
+
+                // Lấy điểm thật của từng sinh viên
+                for(let s of students) {
+                    let enrs = await fetch(`/api/student_enrollments?student_id=${s.id}`).then(r=>r.json()).catch(()=>[]);
+                    
+                    enrs.forEach(e => {
+                        // Chỉ tính những môn đã chốt điểm (có final_grade)
+                        if (e.final_grade !== null && e.final_grade !== undefined && e.final_grade !== '') {
+                            let process = parseFloat(e.process_grade) || 0;
+                            let mid = parseFloat(e.mid_grade) || 0;
+                            let final = parseFloat(e.final_grade) || 0;
+                            let credits = parseInt(e.credits) || 0;
+
+                            // Tính điểm hệ 10
+                            let grade10 = (process * 0.1) + (mid * 0.3) + (final * 0.6);
+                            
+                            // Quy đổi sang hệ 4
+                            let grade4 = 0;
+                            if (grade10 >= 8.5) grade4 = 4.0;
+                            else if (grade10 >= 8.0) grade4 = 3.5;
+                            else if (grade10 >= 7.0) grade4 = 3.0;
+                            else if (grade10 >= 6.5) grade4 = 2.5;
+                            else if (grade10 >= 5.5) grade4 = 2.0;
+                            else if (grade10 >= 5.0) grade4 = 1.5;
+                            else if (grade10 >= 4.0) grade4 = 1.0;
+
+                            // Cộng dồn
+                            studentStats[s.id].totalPoints += (grade4 * credits);
+                            studentStats[s.id].totalCredits += credits;
+                            
+                            if(grade4 > 0) studentStats[s.id].earnedCredits += credits;
+                            if(grade10 < 4.0) studentStats[s.id].failCount += 1; // Nợ môn
+                        }
+                    });
+                    
+                    // Chốt GPA
+                    if (studentStats[s.id].totalCredits > 0) {
+                        studentStats[s.id].gpa = (studentStats[s.id].totalPoints / studentStats[s.id].totalCredits).toFixed(2);
+                    }
+                }
+
+                // 3. Xử lý Lọc theo Khoa
+                const deptSelect = document.getElementById('statDeptFilter');
+                const depts = [...new Set(students.map(s => s.major).filter(Boolean))];
+                if(deptSelect.options.length <= 1) { 
+                    depts.forEach(d => deptSelect.innerHTML += `<option value="${d}">${d}</option>`);
+                }
+                const selectedDept = deptSelect.value;
+                
+                let filteredStudents = students;
+                if(selectedDept !== 'all') filteredStudents = students.filter(s => s.major === selectedDept);
+
+                // 4. Biến lưu trữ thống kê
+                let topStudentsArr = [];
+                let categoryCounts = { ex: 0, vg: 0, gd: 0, av: 0 };
+                let deptDebtMap = {}; 
+                let cohortGpaMap = {};
+                let pendingGraduation = 0;
+                let totalStudentsWithDebt = 0;
+
+                // 5. Phân tích dữ liệu Sinh viên đã lọc
+                filteredStudents.forEach(s => {
+                    let stats = studentStats[s.id];
+                    let gpa4 = parseFloat(stats.gpa);
+                    let hasDebt = stats.failCount > 0;
+                    
+                    if (hasDebt) totalStudentsWithDebt++;
+                    if (stats.earnedCredits >= 120) pendingGraduation++; // SV đủ số chỉ ra trường (Giả định >= 120)
+
+                    let standing = '';
+                    if (gpa4 >= 3.6) { standing = 'XUẤT SẮC'; categoryCounts.ex++; }
+                    else if (gpa4 >= 3.2) { standing = 'GIỎI'; categoryCounts.vg++; }
+                    else if (gpa4 >= 2.5) { standing = 'KHÁ'; categoryCounts.gd++; }
+                    else { standing = 'TRUNG BÌNH'; categoryCounts.av++; }
+
+                    topStudentsArr.push({ ...s, gpa: gpa4.toFixed(2), standing, earned: stats.earnedCredits });
+
+                    // Map số lượng nợ môn theo Khoa
+                    let major = stats.major;
+                    if(!deptDebtMap[major]) deptDebtMap[major] = { total: 0, debt: 0 };
+                    deptDebtMap[major].total++;
+                    if(hasDebt) deptDebtMap[major].debt++;
+
+                    // Map GPA trung bình theo Khóa (Thay cho tỷ lệ ra trường đúng hạn)
+                    let cohort = stats.cohort;
+                    if(!cohortGpaMap[cohort]) cohortGpaMap[cohort] = { sumGpa: 0, count: 0 };
+                    cohortGpaMap[cohort].sumGpa += gpa4;
+                    cohortGpaMap[cohort].count++;
+                });
+
+                // 6. Hiển thị UI: Hiệu suất Học tập (Vòng tròn)
+                let totalFilter = filteredStudents.length || 1;
+                let pEx = Math.round((categoryCounts.ex / totalFilter) * 100);
+                let pVg = Math.round((categoryCounts.vg / totalFilter) * 100);
+                let pGd = Math.round((categoryCounts.gd / totalFilter) * 100);
+                let pAv = Math.round((categoryCounts.av / totalFilter) * 100);
+                
+                document.getElementById('statGoodExcelPct').innerText = (pEx + pVg) + '%';
+                document.getElementById('statPctEx').innerText = pEx;
+                document.getElementById('statPctVg').innerText = pVg;
+                document.getElementById('statPctGd').innerText = pGd;
+                document.getElementById('statPctAv').innerText = pAv;
+
+                // 7. Hiển thị UI: Các thẻ đếm (Top SV, Chờ duyệt ra trường)
+                document.getElementById('statTopCount').innerText = categoryCounts.ex + categoryCounts.vg;
+                document.getElementById('statPendingCount').innerText = pendingGraduation;
+
+                // 8. Hiển thị UI: Thanh Nợ môn theo Khoa
+                let debtHtml = '';
+                for (const [dept, data] of Object.entries(deptDebtMap)) {
+                    let pct = ((data.debt / data.total) * 100).toFixed(1);
+                    let barColor = pct > 5 ? 'bg-danger' : 'bg-primary'; 
+                    let textClass = pct > 5 ? 'text-danger' : 'text-muted';
+                    debtHtml += `
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between small fw-medium mb-1">
+                                <span class="text-dark">${dept}</span>
+                                <span class="${textClass} fw-bold">${data.debt} SV nợ (${pct}%)</span>
+                            </div>
+                            <div class="progress" style="height: 6px; border-radius: 4px; background: #f1f5f9;">
+                                <div class="progress-bar ${barColor}" style="width: ${pct}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                document.getElementById('statDebtBarsContainer').innerHTML = debtHtml || '<p class="text-muted text-center py-3 small">Không có dữ liệu sinh viên.</p>';
+
+                // 9. Hiển thị UI: Tỉ lệ nợ môn toàn trường
+                let univDebtAvg = ((totalStudentsWithDebt / totalFilter) * 100).toFixed(1);
+                document.getElementById('univDebtAvgVal').innerText = univDebtAvg + '%';
+                document.getElementById('univDebtAvgDiff').innerText = totalStudentsWithDebt;
+
+                // 10. Hiển thị UI: Biểu đồ cột (Thay thành Điểm trung bình theo Khóa)
+                let cohortHtml = '';
+                let sortedCohorts = Object.keys(cohortGpaMap).sort();
+                if (sortedCohorts.length > 0) {
+                    document.getElementById('chartTitle').innerText = 'Điểm trung bình (GPA) theo Khóa';
+                    document.getElementById('chartSubTitle').innerText = 'So sánh hiệu suất học tập giữa các K';
+
+                    sortedCohorts.forEach(cohort => {
+                        let avgGpa = (cohortGpaMap[cohort].sumGpa / cohortGpaMap[cohort].count).toFixed(2);
+                        // Quy đổi GPA (max 4.0) sang chiều cao phần trăm (max 100%)
+                        let heightPct = (avgGpa / 4.0) * 100;
+                        cohortHtml += `
+                            <div class="bar-col">
+                                <span class="small fw-bold text-primary mb-2">${avgGpa}</span>
+                                <div class="bar-fill" style="height: ${heightPct}% !important;"></div>
+                                <span class="small text-muted mt-2" style="font-size: 0.7rem;">${cohort}</span>
+                            </div>`;
+                    });
+                } else {
+                    cohortHtml = '<div class="text-center w-100 text-muted small py-4">Chưa có dữ liệu Khóa học.</div>';
+                }
+                document.getElementById('barChartContainer').innerHTML = cohortHtml;
+
+                // 11. Hiển thị UI: Bảng xếp hạng Top 10 Sinh viên
+                topStudentsArr.sort((a, b) => b.gpa - a.gpa); // Sắp xếp giảm dần theo GPA
+                let top10 = topStudentsArr.slice(0, 10);
+                let tableHtml = '';
+                
+                if(top10.length === 0) tableHtml = '<tr><td colspan="6" class="text-center py-5 text-muted">Không có dữ liệu sinh viên.</td></tr>';
+                else {
+                    top10.forEach(s => {
+                        let badgeHtml = '';
+                        if(s.standing === 'XUẤT SẮC') badgeHtml = '<span class="badge" style="background-color: #2563eb; padding: 6px 12px; border-radius: 20px;">XUẤT SẮC</span>';
+                        else if(s.standing === 'GIỎI') badgeHtml = '<span class="badge" style="background-color: #8b5cf6; padding: 6px 12px; border-radius: 20px;">GIỎI</span>';
+                        else if(s.standing === 'KHÁ') badgeHtml = '<span class="badge" style="background-color: #3b82f6; padding: 6px 12px; border-radius: 20px;">KHÁ</span>';
+                        else badgeHtml = '<span class="badge" style="background-color: #94a3b8; padding: 6px 12px; border-radius: 20px;">TRUNG BÌNH</span>';
+                        
+                        let gpaColor = s.gpa >= 3.6 ? 'text-primary' : (s.gpa >= 3.2 ? 'text-purple' : 'text-info');
+                        
+                        tableHtml += `
+                            <tr>
+                                <td class="ps-4 text-muted fw-medium">${s.code}</td>
+                                <td class="text-dark fw-bold">${s.name}</td>
+                                <td class="text-muted">${s.major || 'N/A'}</td>
+                                <td class="text-center"><span class="fw-bold ${gpaColor} bg-light px-2 py-1 rounded border">${s.gpa}</span></td>
+                                <td>${badgeHtml}</td>
+                                <td class="text-center"><i class="bi bi-eye text-muted fs-5" style="cursor: pointer;" onclick="switchTab('tab-students')"></i></td>
+                            </tr>
+                        `;
+                    });
+                }
+                document.getElementById('statTopStudentsBody').innerHTML = tableHtml;
+
+            } catch(e) {
+                console.error("Lỗi khi tải dữ liệu Thống kê:", e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initDashboard();
+        });
+    </script>
+</body>
+</html>
