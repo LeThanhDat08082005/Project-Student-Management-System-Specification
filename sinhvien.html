@@ -1,0 +1,856 @@
+Giao diện Sinh viên
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Thông Tin Sinh Viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { background-color: #f4f7f6; }
+        .nav-link { cursor: pointer; }
+        .hidden { display: none !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* CSS Giao diện Giỏ hàng Đăng ký học phần */
+        .course-card { border-radius: 12px; border: 1px solid #e5e7eb; padding: 1.25rem; background: #fff; transition: shadow 0.2s; height: 100%; display: flex; flex-direction: column; justify-content: space-between;}
+        .course-card:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .badge-compulsory { background-color: #dcfce7; color: #166534; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; letter-spacing: 0.5px;}
+        .badge-elective { background-color: #f3e8ff; color: #6b21a8; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; letter-spacing: 0.5px;}
+        .cart-header { background-color: #1d4ed8; color: white; border-radius: 12px 12px 0 0; padding: 1.5rem 1rem; }
+        .cart-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; background-color: #f8fafc;}
+        .cart-total-box { border: 1px solid #e5e7eb; border-radius: 0 0 12px 12px; padding: 1rem; background: #fff; }
+        .search-bar { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; }
+
+        /* CSS Giao diện Profile chi tiết */
+        .profile-header-btn { font-weight: 600; border-radius: 8px; padding: 6px 16px; font-size: 0.85rem; }
+        .info-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; background: #fff; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .info-label { color: #6b7280; font-size: 0.8rem; font-weight: 500; margin-bottom: 2px; }
+        .info-value { color: #111827; font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; }
+        .status-badge { background-color: #dcfce7; color: #166534; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+        .avatar-box { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; }
+        .gpa-card { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 12px; padding: 1.5rem; height: 100%; }
+        .gpa-number { font-size: 2.5rem; font-weight: 800; line-height: 1; margin-bottom: 5px; }
+        .conduct-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; background: #fff; display: flex; align-items: center; gap: 15px; margin-top: 1rem; }
+        .conduct-icon { width: 45px; height: 45px; background-color: #f3e8ff; color: #7e22ce; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .table-results th { font-size: 0.8rem; color: #6b7280; font-weight: 600; border-bottom: 1px solid #e5e7eb; }
+        .table-results td { font-size: 0.9rem; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+    <div id="dashboard-section" class="hidden">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" href="#">EduManage - Sinh Viên</a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link text-white" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid mt-4 px-4 pb-5">
+            <div class="row">
+                <div class="col-md-2 mb-4">
+                    <div class="list-group">
+                        <button class="list-group-item list-group-item-action active" onclick="showTab('profile')"><i class="bi bi-person-badge"></i> Thông tin cá nhân</button>
+                        <button class="list-group-item list-group-item-action" onclick="showTab('curriculum')"><i class="bi bi-journal-text"></i> Chương trình đào tạo</button>
+                        <button class="list-group-item list-group-item-action" onclick="showTab('registration')"><i class="bi bi-cart-plus"></i> Đăng ký học phần</button>
+                        <button class="list-group-item list-group-item-action" onclick="showTab('schedule')"><i class="bi bi-calendar-week"></i> Thời khóa biểu</button>
+                        <button class="list-group-item list-group-item-action" onclick="showTab('grades')"><i class="bi bi-bar-chart"></i> Kết quả học tập</button>
+                    </div>
+                </div>
+                
+                <div class="col-md-10">
+                    
+                    <div id="tab-profile" class="tab-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 class="fw-bold mb-1">Hồ sơ Sinh viên Chi tiết</h4>
+                                <span class="text-muted small">Sinh viên / <span id="breadcrumb-name">...</span></span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-secondary profile-header-btn" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                    <i class="bi bi-key"></i> Đổi mật khẩu
+                                </button>
+                                <button class="btn btn-primary profile-header-btn" onclick="openEditProfileModal()">
+                                    <i class="bi bi-pencil-square"></i> Chỉnh sửa hồ sơ
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-lg-4">
+                                <div class="info-card">
+                                    <div class="d-flex align-items-center gap-3 mb-4">
+                                        <img id="profile-avatar" src="" class="avatar-box" alt="Avatar">
+                                        <div>
+                                            <h5 class="fw-bold mb-1" id="profile-name">Đang tải...</h5>
+                                            <div class="text-muted small mb-1">Mã SV: <span id="profile-code">...</span></div>
+                                            <span class="status-badge">Đang học</span>
+                                        </div>
+                                    </div>
+                                    <div class="info-label">Ngày sinh</div><div class="info-value" id="profile-dob">...</div>
+                                    <div class="info-label">Lớp (Khóa)</div><div class="info-value" id="profile-cohort">...</div>
+                                    <div class="info-label">Khoa (Chuyên ngành)</div><div class="info-value" id="profile-major">...</div>
+                                    <div class="info-label">Email</div><div class="info-value" id="profile-email">...</div>
+                                    <div class="info-label">Số điện thoại</div><div class="info-value">090xxxx123 (Mặc định)</div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="info-card d-flex flex-column">
+                                    <h6 class="fw-bold text-muted mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">NĂNG LỰC THEO NHÓM MÔN HỌC</h6>
+                                    <div class="flex-grow-1 position-relative" style="min-height: 200px;">
+                                        <canvas id="radarChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="info-card d-flex flex-column">
+                                    <h6 class="fw-bold text-muted mb-3" style="font-size: 0.75rem; letter-spacing: 0.5px;">TIẾN ĐỘ HỌC TẬP THEO HỌC KỲ</h6>
+                                    <div class="flex-grow-1 position-relative" style="min-height: 140px;">
+                                        <canvas id="lineChart"></canvas>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-3">
+                                        <div class="border rounded p-2 flex-fill text-center">
+                                            <div class="small text-muted mb-1">Học kỳ gần nhất</div>
+                                            <div class="fw-bold text-primary fs-5" id="latest-gpa">0.0</div>
+                                        </div>
+                                        <div class="border rounded p-2 flex-fill text-center">
+                                            <div class="small text-muted mb-1">Mức cải thiện</div>
+                                            <div class="fw-bold text-muted fs-5" id="improvement-gpa">N/A</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-lg-4">
+                                <div class="gpa-card d-flex flex-column justify-content-between mb-3" style="height: auto; min-height: 200px;">
+                                    <div>
+                                        <div class="small opacity-75 fw-bold mb-2">ĐIỂM TRUNG BÌNH TÍCH LŨY (GPA)</div>
+                                        <div class="d-flex align-items-baseline gap-1 mb-1">
+                                            <span class="gpa-number" id="total-gpa">0.00</span>
+                                            <span class="fs-5 opacity-75">/ 4.0</span>
+                                        </div>
+                                        <div class="small mb-4">Xếp loại: <span class="fw-bold" id="gpa-rating">...</span></div>
+                                    </div>
+                                    <div class="row g-2 text-center border-top border-light border-opacity-25 pt-3">
+                                        <div class="col-6 border-end border-light border-opacity-25">
+                                            <div class="small opacity-75">Tín chỉ</div>
+                                            <div class="fw-bold fs-5" id="total-credits">0/0</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="small opacity-75">Xếp hạng</div>
+                                            <div class="fw-bold fs-5" id="student-rank">N/A</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-card conduct-card">
+                                    <div class="conduct-icon"><i class="bi bi-shield-check"></i></div>
+                                    <div>
+                                        <div class="small text-muted fw-bold">ĐIỂM RÈN LUYỆN</div>
+                                        <div class="fw-bold fs-5">92 Điểm</div>
+                                        <div class="small text-muted">Xếp loại: <span class="text-success fw-bold">Xuất sắc</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-8">
+                                <div class="info-card">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h6 class="fw-bold text-muted mb-0" style="font-size: 0.75rem; letter-spacing: 0.5px;">KẾT QUẢ HỌC TẬP</h6>
+                                        <select class="form-select form-select-sm w-auto"><option>Tất cả học kỳ</option></select>
+                                    </div>
+                                    <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                                        <table class="table table-borderless table-results">
+                                            <thead style="position: sticky; top: 0; background: white;">
+                                                <tr>
+                                                    <th>Mã HP</th><th>Tên HP</th><th>Tín chỉ</th>
+                                                    <th>Điểm (10)</th><th>Điểm (Chữ)</th><th>Trạng thái</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="academic-results-table">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-curriculum" class="tab-content card p-4 hidden">
+                        <h4>Chương trình đào tạo</h4>
+                        <select id="curriculum-select" class="form-select mb-3 w-50" onchange="loadCurriculumCourses()">
+                            <option value="">-- Chọn chương trình --</option>
+                        </select>
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light"><tr><th>Mã HP</th><th>Tên HP</th><th>Tín chỉ</th><th>Học kỳ</th></tr></thead>
+                            <tbody id="curriculum-table"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-registration" class="tab-content hidden">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h4 class="fw-bold mb-1">Đăng ký học phần - Học kỳ Hiện tại</h4>
+                                <p class="text-muted small">Vui lòng chọn môn học bên dưới để thêm vào giỏ.</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="d-flex gap-2 mb-4 search-bar p-2">
+                                    <input type="text" class="form-control border-0 bg-transparent" placeholder="Tìm kiếm theo tên hoặc mã môn học..." style="box-shadow: none;">
+                                    <select class="form-select border-0 bg-white w-auto"><option>Tất cả các khoa</option></select>
+                                    <select class="form-select border-0 bg-white w-auto"><option>Loại môn học</option></select>
+                                </div>
+                                <div class="row g-3" id="available-classes-grid"></div>
+
+                                <hr class="my-5">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold mb-0">Các học phần đã đăng ký</h5>
+                                    <span class="badge bg-success" id="registered-count-badge">0 môn</span>
+                                </div>
+                                <div class="alert alert-info py-2 small mb-3">
+                                    <i class="bi bi-info-circle me-1"></i> Bạn chỉ có thể hủy học phần trước hạn chót và khi chưa bị chốt điểm.
+                                </div>
+                                <div class="table-responsive bg-white rounded border">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã lớp</th>
+                                                <th>Môn học (Mã HP)</th>
+                                                <th>Thời gian & Phòng</th>
+                                                <th class="text-center">Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="registered-courses-table">
+                                            <tr><td colspan="4" class="text-center text-muted py-4">Chưa có môn học nào được đăng ký</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="cart-header">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="mb-0 fw-bold">Giỏ học phần</h5>
+                                        <span class="badge bg-light text-primary" id="cart-count">0 môn học</span>
+                                    </div>
+                                    <div class="small opacity-75 mb-1">TỔNG SỐ TÍN CHỈ</div>
+                                    <h2 class="mb-0 fw-bold"><span id="cart-credits">0</span> <span class="fs-6 fw-normal">/ Tối đa 25</span></h2>
+                                </div>
+                                <div class="cart-total-box">
+                                    <div id="cart-items-container" style="min-height: 150px; max-height: 350px; overflow-y: auto;" class="mb-3">
+                                        <p class="text-muted small text-center mt-4">Chưa có môn học nào trong giỏ.</p>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="text-muted small">Học phí dự kiến:</span>
+                                        <span class="fw-bold" id="cart-tuition">0 VND</span>
+                                    </div>
+                                    <button class="btn btn-primary w-100 fw-bold py-2 mb-2" onclick="confirmRegistration()">
+                                        Xác nhận đăng ký <i class="bi bi-check-circle ms-1"></i>
+                                    </button>
+                                    <button class="btn btn-light text-danger w-100 btn-sm" onclick="clearCart()">Xóa tất cả</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-schedule" class="tab-content card p-4 hidden">
+                        <h4>Thời khóa biểu của tôi</h4>
+                        <table class="table table-bordered mt-3">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Thứ</th>
+                                    <th>Ca học / Thời gian</th>
+                                    <th>Phòng học</th>
+                                    <th>Môn học (Mã HP)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedule-table"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-grades" class="tab-content card p-4 hidden">
+                        <h4>Bảng điểm (Dạng cơ bản)</h4>
+                        <table class="table table-bordered mt-3">
+                            <thead class="table-light"><tr><th>Mã lớp</th><th>Môn học</th><th>Điểm QT</th><th>Điểm GK</th><th>Điểm CK</th></tr></thead>
+                            <tbody id="grades-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Đổi mật khẩu</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="password" id="old-pass" class="form-control mb-2" placeholder="Mật khẩu cũ">
+                    <input type="password" id="new-pass" class="form-control" placeholder="Mật khẩu mới">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="changePassword()">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="updateProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Cập nhật thông tin cá nhân</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Họ và tên</label>
+                        <input type="text" id="edit-name" class="form-control" placeholder="Nhập họ tên">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Ngày sinh</label>
+                        <input type="date" id="edit-dob" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Email</label>
+                        <input type="email" id="edit-email" class="form-control" placeholder="Nhập email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Số điện thoại</label>
+                        <input type="text" id="edit-phone" class="form-control" placeholder="Nhập số điện thoại">
+                    </div>
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i> Thông tin mới sẽ được gửi đến Admin để phê duyệt.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="submitProfileUpdate()">Gửi yêu cầu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- 1. BIẾN TOÀN CỤC & CẤU HÌNH ---
+        let currentUserId = localStorage.getItem('user_id');
+        let currentStudentId = null;
+        let radarChartInstance = null;
+        let lineChartInstance = null;
+        
+        let availableClasses = []; 
+        let courseCart = []; 
+        let registeredClassesData = []; 
+        let completedCourses = []; 
+        const MAX_CREDITS = 25; 
+        const TUITION_PER_CREDIT = 400000;
+
+        // CẤU HÌNH HẠN CHÓT HỦY HỌC PHẦN (Năm-Tháng-Ngày T Giờ:Phút:Giây)
+        // Lưu ý: Đổi ngày này về tương lai để test tính năng cho phép hủy môn!
+        const CANCELLATION_DEADLINE = new Date("2026-08-15T23:59:59"); 
+
+        // --- HÀM CHUẨN HÓA THỜI GIAN CA HỌC ---
+        function formatScheduleTime(timeStr) {
+            if (!timeStr) return "";
+            let str = timeStr.trim();
+            if (str.includes('(')) return str;
+            let match = str.match(/^ca\s*(\d+)/i);
+            if (match) {
+                let ca = match[1];
+                if (ca === '1') return 'Ca 1 (07:00 - 09:30)';
+                if (ca === '2') return 'Ca 2 (09:30 - 12:00)';
+                if (ca === '3') return 'Ca 3 (13:00 - 15:30)';
+                if (ca === '4') return 'Ca 4 (15:30 - 18:00)';
+                if (ca === '5') return 'Ca 5 (18:00 - 20:30)';
+            }
+            return str; 
+        }
+
+        // --- 2. KHỞI TẠO & ĐIỀU HƯỚNG ---
+        if (!currentUserId) { window.location.href = '/'; } 
+        else {
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            loadProfile();
+            setTimeout(loadRegisteredData, 500);
+        }
+
+        function logout() { localStorage.removeItem('user_id'); window.location.href = '/'; }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            if(tabId === 'profile') loadProfile(); 
+            if(tabId === 'curriculum') loadCurriculums();
+            if(tabId === 'registration') {
+                loadClasses(); 
+                loadRegisteredData(); 
+            }
+            if(tabId === 'schedule' || tabId === 'grades') loadRegisteredData();
+        }
+
+        // --- 3. CHỨC NĂNG PROFILE ---
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/students');
+                const students = await res.json();
+                const me = students.find(s => s.uid == currentUserId);
+                
+                if (me) {
+                    currentStudentId = me.id;
+                    
+                    document.getElementById('breadcrumb-name').innerText = `${me.code} - ${me.name}`;
+                    document.getElementById('profile-name').innerText = me.name;
+                    document.getElementById('profile-code').innerText = me.code;
+                    document.getElementById('profile-dob').innerText = me.dob || 'Chưa cập nhật';
+                    document.getElementById('profile-cohort').innerText = me.cohort || 'K15';
+                    document.getElementById('profile-major').innerText = me.major || 'CNTT';
+                    document.getElementById('profile-email').innerText = me.email;
+                    document.getElementById('profile-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(me.name)}&background=eff6ff&color=2563eb`;
+
+                    const enrollRes = await fetch(`/api/student_enrollments?student_id=${currentStudentId}`);
+                    const enrollments = await enrollRes.json();
+                    
+                    let totalCredits = 0;
+                    let totalGradePoints = 0; 
+                    
+                    let semesterData = {};
+                    let competencyScores = {
+                        Fundamental: { sum: 0, count: 0 }, Major: { sum: 0, count: 0 },
+                        Skills: { sum: 0, count: 0 }, Languages: { sum: 0, count: 0 },
+                        Projects: { sum: 0, count: 0 }, Thesis: { sum: 0, count: 0 }
+                    };
+
+                    const tbody = document.getElementById('academic-results-table');
+                    tbody.innerHTML = '';
+                    if(enrollments.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Chưa có kết quả học tập</td></tr>';
+                    }
+
+                    enrollments.forEach(e => {
+                        let isCompleted = e.final_grade !== null && e.final_grade !== undefined && e.final_grade !== '' && e.final_grade !== 0;
+
+                        if (isCompleted) {
+                            let grade10 = (e.process_grade * 0.1) + (e.mid_grade * 0.3) + (e.final_grade * 0.6);
+                            grade10 = Math.round(grade10 * 10) / 10;
+                            
+                            let letter = 'F'; 
+                            let grade4 = 0.0; 
+                            let statusClass = 'text-danger bg-danger bg-opacity-10'; 
+                            let statusText = 'Trượt';
+
+                            if (grade10 >= 8.5) { letter = 'A'; grade4 = 4.0; statusClass = 'text-primary bg-primary bg-opacity-10'; statusText = 'Hoàn thành'; }
+                            else if (grade10 >= 8.0) { letter = 'B+'; grade4 = 3.5; statusClass = 'text-primary bg-primary bg-opacity-10'; statusText = 'Hoàn thành'; }
+                            else if (grade10 >= 7.0) { letter = 'B'; grade4 = 3.0; statusClass = 'text-primary bg-primary bg-opacity-10'; statusText = 'Hoàn thành'; }
+                            else if (grade10 >= 6.5) { letter = 'C+'; grade4 = 2.5; statusClass = 'text-primary bg-primary bg-opacity-10'; statusText = 'Hoàn thành'; }
+                            else if (grade10 >= 5.5) { letter = 'C'; grade4 = 2.0; statusClass = 'text-primary bg-primary bg-opacity-10'; statusText = 'Hoàn thành'; }
+                            else if (grade10 >= 5.0) { letter = 'D+'; grade4 = 1.5; statusClass = 'text-warning bg-warning bg-opacity-10'; statusText = 'Qua môn'; }
+                            else if (grade10 >= 4.0) { letter = 'D'; grade4 = 1.0; statusClass = 'text-warning bg-warning bg-opacity-10'; statusText = 'Qua môn'; }
+
+                            totalCredits += e.credits;
+                            totalGradePoints += (grade4 * e.credits);
+
+                            if(!semesterData[e.semester]) semesterData[e.semester] = { points: 0, credits: 0 };
+                            semesterData[e.semester].points += (grade4 * e.credits);
+                            semesterData[e.semester].credits += e.credits;
+
+                            let score = grade10 * 10; 
+                            let code = e.course_code ? e.course_code.toUpperCase() : "";
+                            if (code.includes('ENG') || code === 'INT103') { competencyScores.Languages.sum += score; competencyScores.Languages.count++; }
+                            else if (code.includes('PRJ')) { competencyScores.Projects.sum += score; competencyScores.Projects.count++; }
+                            else if (code.includes('THS')) { competencyScores.Thesis.sum += score; competencyScores.Thesis.count++; }
+                            else if (code.includes('SKL')) { competencyScores.Skills.sum += score; competencyScores.Skills.count++; }
+                            else if (code.startsWith('INT1')) { competencyScores.Fundamental.sum += score; competencyScores.Fundamental.count++; }
+                            else { competencyScores.Major.sum += score; competencyScores.Major.count++; }
+                            
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${e.course_code}</td>
+                                    <td class="fw-bold">${e.course_name}</td>
+                                    <td>${e.credits}</td>
+                                    <td class="fw-bold">${grade10}</td>
+                                    <td class="fw-bold text-primary">${letter}</td>
+                                    <td><span class="badge ${statusClass} rounded-pill px-2 py-1 border-0">${statusText}</span></td>
+                                </tr>
+                            `;
+                        } else {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${e.course_code}</td>
+                                    <td class="fw-bold">${e.course_name}</td>
+                                    <td>${e.credits}</td>
+                                    <td class="fw-bold">-</td>
+                                    <td class="fw-bold text-primary">-</td>
+                                    <td><span class="badge text-secondary bg-secondary bg-opacity-10 rounded-pill px-2 py-1 border-0">Đang học</span></td>
+                                </tr>
+                            `;
+                        }
+                    });
+
+                    let cumulativeGPA = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : "0.00";
+                    document.getElementById('total-gpa').innerText = cumulativeGPA;
+                    document.getElementById('latest-gpa').innerText = cumulativeGPA;
+                    document.getElementById('gpa-rating').innerText = cumulativeGPA >= 3.6 ? 'Xuất sắc' : (cumulativeGPA >= 3.2 ? 'Giỏi' : (cumulativeGPA >= 2.5 ? 'Khá' : 'Trung bình'));
+
+                    let maxCredits = me.max_credits || 135; 
+                    document.getElementById('total-credits').innerText = `${totalCredits}/${maxCredits}`;
+
+                    if (me.rank_position && me.rank_total) {
+                        document.getElementById('student-rank').innerText = `#${me.rank_position}/${me.rank_total}`;
+                    } else {
+                        document.getElementById('student-rank').innerText = "N/A"; 
+                    }
+
+                    initCharts(semesterData, competencyScores);
+                }
+            } catch (e) {
+                console.error("Lỗi khi tải thông tin:", e);
+            }
+        }
+
+        function initCharts(semesterData, competencyScores) {
+            if (radarChartInstance) radarChartInstance.destroy();
+            if (lineChartInstance) lineChartInstance.destroy();
+
+            const semesters = Object.keys(semesterData).sort((a,b) => a-b);
+            let lineLabels = []; let lineData = [];
+            
+            if (semesters.length === 0) {
+                lineLabels = ['Kỳ 1']; lineData = [0];
+            } else {
+                lineLabels = semesters.map(s => `Kỳ ${s}`);
+                lineData = semesters.map(s => (semesterData[s].points / semesterData[s].credits).toFixed(2));
+            }
+
+            if (lineData.length >= 2) {
+                let diff = (lineData[lineData.length - 1] - lineData[lineData.length - 2]).toFixed(2);
+                document.getElementById('improvement-gpa').innerText = diff >= 0 ? `+${diff}` : diff;
+                document.getElementById('improvement-gpa').className = diff >= 0 ? 'fw-bold text-success fs-5' : 'fw-bold text-danger fs-5';
+            }
+
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            lineChartInstance = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: lineLabels,
+                    datasets: [{
+                        label: 'GPA', data: lineData,
+                        borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3, pointBackgroundColor: '#8b5cf6', fill: true, tension: 0.4
+                    }]
+                },
+                options: { scales: { y: { min: 0.0, max: 4.0 } }, plugins: { legend: { display: false } }, maintainAspectRatio: false }
+            });
+
+            const getComp = (key) => competencyScores[key].count > 0 ? Math.round(competencyScores[key].sum / competencyScores[key].count) : 75;
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            radarChartInstance = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Cơ sở ngành', 'Chuyên ngành', 'Kỹ năng mềm', 'Ngoại ngữ', 'Đồ án', 'Khóa luận'],
+                    datasets: [{
+                        label: 'Năng lực',
+                        data: [getComp('Fundamental'), getComp('Major'), getComp('Skills'), getComp('Languages'), getComp('Projects'), getComp('Thesis')],
+                        backgroundColor: 'rgba(37, 99, 235, 0.2)', borderColor: 'rgba(37, 99, 235, 1)',
+                        pointBackgroundColor: 'rgba(37, 99, 235, 1)', borderWidth: 2
+                    }]
+                },
+                options: { scales: { r: { beginAtZero: true, max: 100, ticks: { display: false } } }, plugins: { legend: { display: false } }, maintainAspectRatio: false }
+            });
+        }
+
+        async function changePassword() {
+            const old_pass = document.getElementById('old-pass').value;
+            const new_pass = document.getElementById('new-pass').value;
+            if(!old_pass || !new_pass) return alert("Vui lòng nhập đầy đủ thông tin!");
+            const res = await fetch('/api/users/change_password', {
+                method: 'POST', body: JSON.stringify({ uid: currentUserId, old_pass, new_pass }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (res.ok) { alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'); logout(); } 
+            else alert('Mật khẩu cũ không chính xác!');
+        }
+
+        function openEditProfileModal() {
+            document.getElementById('edit-name').value = document.getElementById('profile-name').innerText;
+            document.getElementById('edit-email').value = document.getElementById('profile-email').innerText;
+            
+            let dobText = document.getElementById('profile-dob').innerText;
+            if(dobText && dobText !== '...' && dobText !== 'Chưa cập nhật') {
+                if(dobText.includes('/')) {
+                    let parts = dobText.split('/');
+                    if(parts.length === 3) document.getElementById('edit-dob').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                } else {
+                    document.getElementById('edit-dob').value = dobText;
+                }
+            }
+            
+            var modal = new bootstrap.Modal(document.getElementById('updateProfileModal'));
+            modal.show();
+        }
+
+        async function submitProfileUpdate() {
+            const newName = document.getElementById('edit-name').value.trim();
+            const newDob = document.getElementById('edit-dob').value;
+            const newEmail = document.getElementById('edit-email').value.trim();
+            const newPhone = document.getElementById('edit-phone').value.trim();
+
+            if (!newName) {
+                return alert("Họ và tên không được để trống!");
+            }
+
+            const payload = { 
+                student_id: currentStudentId, 
+                new_name: newName,
+                new_dob: newDob,
+                new_email: newEmail,
+                new_phone: newPhone
+            };
+
+            try {
+                const res = await fetch('/api/requests', {
+                    method: 'POST', 
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (res.ok) {
+                    alert('Đã gửi yêu cầu cập nhật thông tin tới Admin thành công!');
+                    bootstrap.Modal.getInstance(document.getElementById('updateProfileModal')).hide();
+                } else {
+                    alert('Lỗi: Không thể gửi yêu cầu cập nhật.');
+                }
+            } catch (e) {
+                alert("Lỗi kết nối mạng!");
+            }
+        }
+
+        async function loadCurriculums() {
+            const res = await fetch('/api/curriculums');
+            const data = await res.json();
+            const sel = document.getElementById('curriculum-select');
+            sel.innerHTML = '<option value="">-- Chọn chương trình --</option>';
+            data.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.major} - ${c.intake}</option>`);
+        }
+
+        async function loadCurriculumCourses() {
+            const cid = document.getElementById('curriculum-select').value;
+            if(!cid) return;
+            const res = await fetch(`/api/curriculum/courses?curriculum_id=${cid}`);
+            const courses = await res.json();
+            document.getElementById('curriculum-table').innerHTML = courses.map(c => 
+                `<tr><td>${c.code}</td><td>${c.name}</td><td>${c.credits}</td><td>${c.semester}</td></tr>`
+            ).join('');
+        }
+
+        // --- 4. CHỨC NĂNG ĐĂNG KÝ HỌC PHẦN MỚI ---
+        async function loadClasses() { 
+            const res = await fetch('/api/classes'); 
+            availableClasses = await res.json(); 
+            renderClassGrid(); 
+        }
+
+        function renderClassGrid() {
+            const grid = document.getElementById('available-classes-grid');
+            grid.innerHTML = availableClasses.map(c => {
+                const isCompulsory = c.is_elective === 0;
+                const badgeClass = isCompulsory ? 'badge-compulsory' : 'badge-elective';
+                const badgeText = isCompulsory ? 'BẮT BUỘC' : 'TỰ CHỌN';
+                const isFull = c.current_enrollment >= c.max_capacity;
+                
+                return `
+                <div class="col-md-6">
+                    <div class="course-card ${isFull ? 'bg-light opacity-75' : ''}">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="${badgeClass}">${badgeText}</span>
+                                <span class="text-muted small fw-bold">${c.course_code}</span>
+                            </div>
+                            <h6 class="fw-bold mb-3" style="min-height: 40px;">${c.course}</h6>
+                            <div class="row small text-muted mb-3 gy-2">
+                                <div class="col-6"><i class="bi bi-star"></i> ${c.credits} Tín chỉ</div>
+                                <div class="col-6"><i class="bi bi-person"></i> ${c.lecturer}</div>
+                                <div class="col-12">
+                                    <i class="bi bi-people"></i> ${c.current_enrollment}/${c.max_capacity} chỗ 
+                                    ${isFull ? '<span class="text-danger fw-bold">(Đã đầy)</span>' : '(Đang mở)'}
+                                </div>
+                                ${c.prerequisite && c.prerequisite !== '-' ? `<div class="col-12 text-warning"><i class="bi bi-exclamation-triangle"></i> Tiên quyết: ${c.prerequisite}</div>` : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-calendar3"></i> ${c.day}, ${formatScheduleTime(c.time)} <br> P.${c.room}</small>
+                                <button class="btn ${isFull ? 'btn-secondary' : 'btn-primary'} btn-sm px-3 rounded-pill" 
+                                        onclick="addToCart(${c.id})" ${isFull ? 'disabled' : ''}>
+                                    ${isFull ? 'Hết chỗ' : '+ Đăng ký'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function addToCart(classId) {
+            const cls = availableClasses.find(c => c.id === classId);
+
+            if (courseCart.find(item => item.id === classId)) return alert('Môn học này đã có trong giỏ!');
+
+            const currentCredits = courseCart.reduce((sum, item) => sum + item.credits, 0);
+            if (currentCredits + cls.credits > MAX_CREDITS) return alert(`Vượt quá số tín chỉ tối đa (${MAX_CREDITS})!`);
+            
+            if (cls.current_enrollment >= cls.max_capacity) return alert('Lớp học này đã đủ số lượng sinh viên!');
+            
+            if (cls.prerequisite && cls.prerequisite !== '-') {
+                const passed = completedCourses.includes(cls.prerequisite);
+                if (!passed) return alert(`Bạn chưa hoàn thành môn tiên quyết: ${cls.prerequisite}`);
+            }
+
+            const conflictInCart = courseCart.find(item => item.day === cls.day && item.time === cls.time);
+            if (conflictInCart) return alert(`Trùng lịch với môn [${conflictInCart.course}] đang có trong giỏ hàng!`);
+            
+            const conflictRegistered = registeredClassesData.find(reg => reg.schedule_day === cls.day && reg.schedule_time === cls.time);
+            if (conflictRegistered) return alert(`Trùng lịch với môn [${conflictRegistered.course_name}] mà bạn đã đăng ký!`);
+
+            courseCart.push(cls); renderCart();
+        }
+
+        function removeFromCart(classId) { courseCart = courseCart.filter(item => item.id !== classId); renderCart(); }
+        function clearCart() { courseCart = []; renderCart(); }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const totalCredits = courseCart.reduce((sum, item) => sum + item.credits, 0);
+            document.getElementById('cart-count').innerText = `${courseCart.length} môn học`;
+            document.getElementById('cart-credits').innerText = totalCredits;
+            document.getElementById('cart-tuition').innerText = (totalCredits * TUITION_PER_CREDIT).toLocaleString('vi-VN') + ' VND';
+            
+            if (courseCart.length === 0) { 
+                container.innerHTML = '<p class="text-muted small text-center mt-4">Chưa có môn học nào trong giỏ.</p>'; return; 
+            }
+            container.innerHTML = courseCart.map(c => `
+                <div class="cart-item">
+                    <div>
+                        <div class="small fw-bold text-dark">${c.course}</div>
+                        <div class="small text-muted" style="font-size: 0.7rem;">${c.credits} Tín chỉ • ${c.course_code} <br> <span class="text-primary">${c.day}, ${formatScheduleTime(c.time)}</span></div>
+                    </div>
+                    <button class="btn btn-light btn-sm text-danger border-0" onclick="removeFromCart(${c.id})"><i class="bi bi-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        async function confirmRegistration() {
+            if (courseCart.length === 0) return alert('Giỏ hàng trống!');
+            const btn = event.target; const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...'; btn.disabled = true;
+
+            let successCount = 0;
+            for (const item of courseCart) {
+                const res = await fetch('/api/enrollments', { method: 'POST', body: JSON.stringify({ student_id: currentStudentId, class_id: item.id }), headers: { 'Content-Type': 'application/json' } });
+                if (res.ok) successCount++;
+            }
+            btn.innerHTML = originalText; btn.disabled = false;
+            alert(`Đã đăng ký thành công ${successCount}/${courseCart.length} học phần!`);
+            clearCart(); 
+            loadRegisteredData(); 
+            loadClasses(); 
+        }
+
+        async function loadRegisteredData() {
+            if(!currentStudentId) return;
+            const res = await fetch(`/api/student_enrollments?student_id=${currentStudentId}`);
+            const enrollments = await res.json();
+            
+            registeredClassesData = enrollments;
+            
+            completedCourses = enrollments
+                .filter(e => e.final_grade !== null && ((e.process_grade*0.1 + e.mid_grade*0.3 + e.final_grade*0.6) >= 4.0))
+                .map(e => e.course_code);
+
+            // Bảng thời khóa biểu TRONG TAB THỜI KHÓA BIỂU
+            document.getElementById('schedule-table').innerHTML = enrollments.map(e => `
+                <tr>
+                    <td class="align-middle">${e.schedule_day}</td>
+                    <td class="align-middle">${formatScheduleTime(e.schedule_time)}</td>
+                    <td class="align-middle">Phòng ${e.room}</td>
+                    <td class="align-middle"><strong>${e.course_name}</strong><br><small class="text-muted">${e.course_code} - Lớp: ${e.class_code}</small></td>
+                </tr>
+            `).join('');
+
+            // THÊM LOGIC HẠN CHÓT HỦY HỌC PHẦN
+            const registeredTable = document.getElementById('registered-courses-table');
+            const now = new Date();
+            const isPastDeadline = now > CANCELLATION_DEADLINE;
+
+            if(registeredTable) {
+                document.getElementById('registered-count-badge').innerText = `${enrollments.length} môn`;
+                
+                if(enrollments.length === 0) {
+                    registeredTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Chưa có môn học nào được đăng ký</td></tr>';
+                } else {
+                    registeredTable.innerHTML = enrollments.map(e => {
+                        // Kiểm tra sinh viên có bị chốt điểm chưa
+                        const hasNoGrade = e.final_grade === null || e.final_grade === 0;
+                        
+                        let actionHtml = '';
+                        if (!hasNoGrade) {
+                            actionHtml = `<span class="badge bg-secondary">Đã chốt điểm</span>`;
+                        } else if (isPastDeadline) {
+                            actionHtml = `<span class="badge bg-warning text-dark">Hết hạn hủy</span>`;
+                        } else {
+                            actionHtml = `<button class="btn btn-outline-danger btn-sm" onclick="cancelRegistration(${e.enroll_id})"><i class="bi bi-x-circle"></i> Hủy</button>`;
+                        }
+
+                        return `
+                            <tr>
+                                <td class="align-middle fw-bold">${e.class_code}</td>
+                                <td class="align-middle"><strong>${e.course_name}</strong><br><small class="text-muted">${e.course_code}</small></td>
+                                <td class="align-middle"><small>${e.schedule_day}<br>${formatScheduleTime(e.schedule_time)} - P.${e.room}</small></td>
+                                <td class="text-center align-middle">
+                                    ${actionHtml}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+            
+            // Bảng điểm
+            document.getElementById('grades-table').innerHTML = enrollments.map(e => `
+                <tr><td>${e.class_code}</td><td>${e.course_name}</td><td>${e.process_grade || '-'}</td><td>${e.mid_grade || '-'}</td><td>${e.final_grade || '-'}</td></tr>
+            `).join('');
+        }
+
+        async function cancelRegistration(enrollId) {
+            if (!confirm('Bạn có chắc chắn muốn hủy đăng ký lớp học này? Hệ thống sẽ xóa lớp khỏi thời khóa biểu của bạn.')) return;
+            try {
+                const res = await fetch(`/api/enrollments?id=${enrollId}`, { method: 'DELETE' });
+                if (res.ok) { 
+                    alert('Đã hủy học phần thành công!'); 
+                    loadRegisteredData(); 
+                    loadClasses(); 
+                } 
+                else { alert('Không thể hủy học phần. Vui lòng liên hệ Phòng đào tạo.'); }
+            } catch (error) { alert('Lỗi kết nối đến máy chủ.'); }
+        }
+    </script>
+</body>
+</html>

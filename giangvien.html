@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Cổng Thông Tin Giảng Viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* CSS Kế thừa Vibe từ Admin & Student Portal */
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+            color: #2b3674;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: #ffffff;
+            height: 100vh;
+            position: fixed;
+            top: 0; left: 0;
+            display: flex; flex-direction: column;
+            border-right: 1px solid #e2e8f0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            padding: 24px 20px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .brand-icon {
+            background-color: #2563eb; color: white;
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+        .brand-text h5 { margin: 0; font-weight: 700; color: #1e3a8a; font-size: 1.1rem; }
+        .brand-text p { margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 500;}
+
+        .sidebar-heading {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8;
+            padding: 16px 20px 8px; letter-spacing: 0.5px;
+        }
+
+        .nav-menu { padding: 0 16px; flex-grow: 1; }
+        
+        .nav-pills .nav-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; color: #64748b;
+            text-decoration: none; font-weight: 500; font-size: 0.9rem;
+            border-radius: 8px; margin-bottom: 4px; transition: 0.2s; text-align: left;
+            width: 100%; background: transparent; border: none; cursor: pointer;
+        }
+        .nav-pills .nav-link:hover:not(.active) { background-color: #f1f5f9; color: #0f172a; }
+        .nav-pills .nav-link.active { background-color: #2563eb; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .nav-pills .nav-link i { font-size: 1.1rem; }
+
+        .main-content { margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; }
+
+        .top-header {
+            background-color: #ffffff; padding: 12px 32px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #e2e8f0; height: 70px;
+        }
+        
+        .header-title-box h4 { margin: 0; font-weight: 700; color: #1e3a8a; font-size: 1.1rem; }
+        
+        .header-actions { display: flex; align-items: center; gap: 20px; margin-left: auto; }
+        .user-profile { display: flex; align-items: center; gap: 12px; }
+        .user-info { text-align: right; }
+        .user-info h6 { margin: 0; font-size: 0.85rem; font-weight: 600; color: #0f172a; }
+        .user-info p { margin: 0; font-size: 0.75rem; color: #64748b; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background-color: #e0e7ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-weight: bold;}
+
+        .dashboard-body { padding: 24px 32px; flex-grow: 1; }
+        
+        .custom-card {
+            background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;
+            padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px;
+        }
+        .card-header-custom {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .card-header-custom h5 { margin: 0; font-weight: 700; color: #0f172a; font-size: 1rem; }
+
+        .stat-card { transition: all 0.2s ease; height: 100%; display: flex; flex-direction: column; justify-content: center;}
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #3b82f6; }
+        .stat-card-title { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card-value { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 8px 0 0 0; }
+
+        .schedule-card {
+            background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb;
+            border-radius: 8px; padding: 16px; margin-bottom: 16px; transition: 0.2s;
+        }
+        .schedule-card:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+
+        .table-custom { margin-bottom: 0; border-collapse: separate; border-spacing: 0; width: 100%; }
+        .table-custom th { font-weight: 600; color: #64748b; font-size: 0.75rem; border-bottom: 2px solid #e2e8f0; padding: 14px; background-color: #f8fafc; letter-spacing: 0.5px; text-transform: uppercase; }
+        .table-custom td { padding: 14px; vertical-align: middle; color: #334155; border-bottom: 1px solid #f1f5f9;}
+        .id-badge { background: #eff6ff; color: #3b82f6; font-weight: 600; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; }
+        
+        .grade-input { width: 70px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; }
+        .grade-input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        .btn-primary-custom { background-color: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 500; }
+        .btn-primary-custom:hover { background-color: #1d4ed8; color: white; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon"><i class="bi bi-journal-check"></i></div>
+            <div class="brand-text">
+                <h5>EduManage</h5>
+                <p>Lecturer Portal</p>
+            </div>
+        </div>
+
+        <div class="nav-menu mt-2 nav flex-column nav-pills" id="lecTabs" role="tablist" aria-orientation="vertical">
+            <div class="sidebar-heading">Cá Nhân</div>
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pane-profile" type="button" role="tab" onclick="loadProfile(); changeHeaderTitle('Thông tin cá nhân');">
+                <i class="bi bi-person-badge"></i> Thông tin cá nhân
+            </button>
+            
+            <div class="sidebar-heading">Giảng Dạy</div>
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-classes" type="button" role="tab" onclick="loadMyClasses(); changeHeaderTitle('Lịch & Lớp phân công');">
+                <i class="bi bi-calendar-week"></i> Lịch & Lớp phân công
+            </button>
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-grade" type="button" role="tab" onclick="loadGradeClasses(); changeHeaderTitle('Nhập điểm & Báo cáo');">
+                <i class="bi bi-file-earmark-bar-graph"></i> Nhập điểm & Báo cáo
+            </button>
+            
+            <div class="sidebar-heading">Tra Cứu</div>
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-course" type="button" role="tab" onclick="loadCourses(); changeHeaderTitle('Chương trình Đào tạo');">
+                <i class="bi bi-journal-bookmark"></i> Chương trình Đào tạo
+            </button>
+            
+            <a class="nav-link text-danger mt-4" href="/">
+                <i class="bi bi-box-arrow-right"></i> Đăng xuất hệ thống
+            </a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-title-box"><h4 id="pageTitle">Thông tin cá nhân</h4></div>
+            <div class="header-actions">
+                <button class="btn btn-sm btn-light fw-medium border shadow-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#changePassModal">
+                    <i class="bi bi-key"></i> Đổi mật khẩu
+                </button>
+                <div class="user-profile border-start ps-3 ms-1">
+                    <div class="user-info">
+                        <h6 id="topbarName">Giảng viên</h6>
+                        <p>Lecturer</p>
+                    </div>
+                    <div class="avatar"><i class="bi bi-person-workspace"></i></div>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-body tab-content w-100">
+            
+            <!-- TAB: PROFILE -->
+            <div class="tab-pane fade show active w-100" id="pane-profile" role="tabpanel">
+                <div class="custom-card">
+                    <div class="card-header-custom border-bottom pb-3 mb-4">
+                        <h5><i class="bi bi-info-circle text-primary me-2"></i>Hồ Sơ Cán Bộ Giảng Dạy</h5>
+                    </div>
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <img src="https://ui-avatars.com/api/?name=Lecturer&background=eff6ff&color=2563eb&size=120" class="rounded-circle shadow-sm" alt="Avatar">
+                        </div>
+                        <div class="col-md-6 pt-3">
+                            <h4 class="fw-bold text-dark mb-2" id="profName">Đang tải...</h4>
+                            <p class="text-muted mb-2">Mã Cán Bộ: <strong class="text-primary bg-light px-2 py-1 rounded" id="profCode">...</strong></p>
+                            <p class="text-muted mb-0">Tài khoản Email: <strong class="text-dark" id="profEmail">...</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: CLASSES & SCHEDULE -->
+            <div class="tab-pane fade w-100" id="pane-classes" role="tabpanel">
+                <div class="mb-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-calendar-event text-primary me-2"></i>Lịch Dạy Học Trong Tuần</h5>
+                    <div class="row" id="scheduleCardsArea">
+                        <div class="col-12 text-muted fst-italic">Đang tải lịch giảng dạy...</div>
+                    </div>
+                </div>
+                
+                <div class="custom-card p-0 overflow-hidden">
+                    <div class="card-header-custom p-4 mb-0 bg-white border-bottom">
+                        <h5><i class="bi bi-list-task text-primary me-2"></i>Danh Sách Lớp Được Phân Công</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover m-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Mã Lớp</th>
+                                    <th>Môn Học</th>
+                                    <th class="text-center">Số Tín Chỉ</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myClassesBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: GRADES & REPORTS -->
+            <div class="tab-pane fade w-100" id="pane-grade" role="tabpanel">
+                <div class="custom-card pb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <label class="form-label mb-0 fw-bold text-muted small"><i class="bi bi-funnel-fill"></i> CHỌN LỚP HỌC PHẦN:</label>
+                        <select id="gradeClassSelect" class="form-select w-auto min-vw-25 border shadow-sm" onchange="loadGrades()">
+                            <option value="">-- Chọn lớp học phần --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4 d-none" id="statsArea">
+                    <div class="col-md-3">
+                        <div class="custom-card stat-card border-0">
+                            <div class="stat-card-title">TỔNG SĨ SỐ LỚP</div>
+                            <h3 class="stat-card-value text-primary" id="statTotal">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="custom-card stat-card border-0">
+                            <div class="stat-card-title">SỐ SV ĐẠT (>=4.0)</div>
+                            <h3 class="stat-card-value text-success" id="statPass">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="custom-card stat-card border-0">
+                            <div class="stat-card-title">SỐ SV TRƯỢT (<4.0)</div>
+                            <h3 class="stat-card-value text-danger" id="statFail">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="custom-card stat-card border-0">
+                            <div class="stat-card-title">ĐIỂM TRUNG BÌNH</div>
+                            <h3 class="stat-card-value text-warning" id="statAverage">0.0</h3>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="custom-card">
+                            <div class="card-header-custom border-bottom pb-3 mb-4">
+                                <h5><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Phân Phối Phổ Điểm Lớp Học</h5>
+                            </div>
+                            <div class="row align-items-center px-2">
+                                <div class="col-md-6 border-end pe-4">
+                                    <div class="mb-2 d-flex justify-content-between small fw-medium">
+                                        <span class="text-dark">Xuất sắc / Giỏi (Từ 8.0 - 10)</span><span id="labelGioi" class="text-primary fw-bold">0 SV (0%)</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 8px; background-color: #f1f5f9;">
+                                        <div id="barGioi" class="progress-bar bg-primary" style="width: 0%"></div>
+                                    </div>
+                                    
+                                    <div class="mb-2 d-flex justify-content-between small fw-medium">
+                                        <span class="text-dark">Khá (Từ 7.0 - 7.9)</span><span id="labelKha" class="text-info fw-bold">0 SV (0%)</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 8px; background-color: #f1f5f9;">
+                                        <div id="barKha" class="progress-bar bg-info" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 ps-4">
+                                    <div class="mb-2 d-flex justify-content-between small fw-medium">
+                                        <span class="text-dark">Trung bình (Từ 5.0 - 6.9)</span><span id="labelTB" class="text-warning fw-bold">0 SV (0%)</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 8px; background-color: #f1f5f9;">
+                                        <div id="barTB" class="progress-bar bg-warning" style="width: 0%"></div>
+                                    </div>
+                                    
+                                    <div class="mb-2 d-flex justify-content-between small fw-medium">
+                                        <span class="text-dark">Yếu / Kém (Dưới 5.0)</span><span id="labelYeu" class="text-danger fw-bold">0 SV (0%)</span>
+                                    </div>
+                                    <div class="progress mb-4" style="height: 8px; background-color: #f1f5f9;">
+                                        <div id="barYeu" class="progress-bar bg-danger" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="custom-card p-0 overflow-hidden">
+                    <div class="card-header-custom p-4 mb-0 bg-white border-bottom">
+                        <h5><i class="bi bi-table text-primary me-2"></i>Bảng Điểm Chi Tiết</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover align-middle text-center m-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">MSSV</th>
+                                    <th class="text-start">Họ Tên Sinh Viên</th>
+                                    <th>Quá Trình (10%)</th>
+                                    <th>Giữa Kỳ (30%)</th>
+                                    <th>Cuối Kỳ (60%)</th>
+                                    <th>Tổng kết</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradeTableBody">
+                                <tr><td colspan="7" class="text-muted py-5 text-center">Vui lòng chọn lớp học phần để xem danh sách</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: COURSES / CURRICULUM -->
+            <div class="tab-pane fade w-100" id="pane-course" role="tabpanel">
+                <div class="custom-card mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <label class="form-label mb-0 fw-bold text-muted small"><i class="bi bi-search"></i> TRA CỨU KHUNG ĐÀO TẠO:</label>
+                        <select id="currSelectLec" class="form-select w-auto min-vw-25 border shadow-sm" onchange="renderCurriculumDetailsLec()">
+                            <option value="">-- Chọn Khung chương trình đào tạo --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bg-light p-3 rounded mt-4 d-none border" id="currInfoCardLec">
+                        <div class="row g-3 small">
+                            <div class="col-md-3"><strong>Mã CTĐT:</strong> <span id="infoIdLec" class="text-primary fw-bold"></span></div>
+                            <div class="col-md-3"><strong>Ngành:</strong> <span id="infoMajorLec"></span></div>
+                            <div class="col-md-3"><strong>Khóa:</strong> <span id="infoIntakeLec"></span></div>
+                            <div class="col-md-3"><strong>Tổng tín chỉ:</strong> <span id="infoCreditsLec" class="badge bg-primary fs-6"></span></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="semesterGroupAreaLec" class="w-100"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODALS -->
+    <div class="modal fade" id="classStudentsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fs-6 fw-bold" id="classStudentsTitle">Danh Sách Sinh Viên Lớp</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <div class="table-responsive bg-white rounded border" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-hover text-center align-middle m-0">
+                            <thead class="bg-light text-muted" style="font-size: 0.8rem;">
+                                <tr><th>MSSV</th><th class="text-start">Họ và Tên</th></tr>
+                            </thead>
+                            <tbody id="classStudentsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="changePassModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-white border-bottom">
+                    <h5 class="modal-title fs-6 fw-bold text-dark"><i class="bi bi-key text-primary me-2"></i>Đổi Mật Khẩu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="changePassForm">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Mật khẩu cũ</label>
+                            <input type="password" id="oldPass" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Mật khẩu mới</label>
+                            <input type="password" id="newPass" class="form-control" required minlength="6">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label text-muted small fw-bold">Xác nhận mật khẩu</label>
+                            <input type="password" id="confirmPass" class="form-control" required minlength="6">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-top-0">
+                        <button type="submit" class="btn btn-primary-custom w-100 py-2"><i class="bi bi-check-circle me-1"></i> Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function changeHeaderTitle(title) {
+            document.getElementById('pageTitle').innerText = title;
+        }
+
+        const loggedInUid = localStorage.getItem('user_id') || "3";
+
+        async function loadProfile() {
+            let res = await fetch(`/api/lecturer/profile?uid=${loggedInUid}`); let data = await res.json();
+            if(data.name) { 
+                document.getElementById('topbarName').innerText = data.name; 
+                document.getElementById('profName').innerText = data.name; 
+                document.getElementById('profCode').innerText = data.code; 
+                document.getElementById('profEmail').innerText = data.email; 
+            }
+        }
+
+        async function loadMyClasses() {
+            let res = await fetch(`/api/lecturer/classes?uid=${loggedInUid}`); let data = await res.json();
+            let tbody = document.getElementById('myClassesBody'); tbody.innerHTML = '';
+            let scheduleArea = document.getElementById('scheduleCardsArea'); scheduleArea.innerHTML = '';
+            
+            if(data.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">Chưa có lớp nào được phân công.</td></tr>'; 
+                scheduleArea.innerHTML = '<div class="col-12"><div class="alert alert-light border text-muted">Tuần này bạn không có lịch giảng dạy.</div></div>'; 
+                return; 
+            }
+            
+            data.forEach(c => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="ps-4"><span class="id-badge">${c.code}</span></td>
+                        <td class="fw-medium">${c.course}</td>
+                        <td class="text-center fw-bold text-dark">${c.credits}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary border-0" onclick="viewClassStudents(${c.id}, '${c.code}')" title="Xem danh sách">
+                                <i class="bi bi-people-fill fs-5"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                
+                let day = c.day || "Chưa xếp lịch", time = c.time || "Chưa xếp giờ", room = c.room || "Chưa xếp phòng";
+                scheduleArea.innerHTML += `
+                    <div class="col-md-4">
+                        <div class="schedule-card">
+                            <h6 class="text-primary fw-bold mb-2">${day}</h6>
+                            <div class="fs-6 fw-bold text-dark mb-1">${c.course} <span class="text-muted fw-normal" style="font-size: 0.8rem;">(${c.code})</span></div>
+                            <div class="text-muted small mb-1"><i class="bi bi-clock me-1"></i> ${time}</div>
+                            <div class="text-muted small"><i class="bi bi-geo-alt me-1"></i> ${room}</div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function viewClassStudents(classId, classCode) {
+            document.getElementById('classStudentsTitle').innerText = `Danh Sách Sinh Viên - Lớp ${classCode}`;
+            let data = await (await fetch(`/api/enrollments?class_id=${classId}`)).json();
+            let tbody = document.getElementById('classStudentsTableBody'); tbody.innerHTML = '';
+            
+            if(data.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="2" class="text-muted py-4">Lớp học này chưa có sinh viên đăng ký.</td></tr>'; 
+            } else { 
+                data.forEach(item => { 
+                    tbody.innerHTML += `<tr><td class="fw-bold text-primary">${item.code}</td><td class="text-start fw-medium">${item.name}</td></tr>`; 
+                }); 
+            }
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('classStudentsModal')).show();
+        }
+
+        async function loadGradeClasses() { 
+            let classes = await (await fetch(`/api/lecturer/classes?uid=${loggedInUid}`)).json(); 
+            document.getElementById('gradeClassSelect').innerHTML = '<option value="">-- Vui lòng chọn lớp học phần --</option>' + classes.map(c => `<option value="${c.id}">[${c.code}] ${c.course}</option>`).join(''); 
+            document.getElementById('statsArea').classList.add('d-none'); 
+            document.getElementById('gradeTableBody').innerHTML = '<tr><td colspan="7" class="text-muted py-5 text-center">Vui lòng chọn lớp học phần</td></tr>'; 
+        }
+
+        async function loadGrades() {
+            let classId = document.getElementById('gradeClassSelect').value; 
+            let tbody = document.getElementById('gradeTableBody'); 
+            let statsArea = document.getElementById('statsArea'); 
+            
+            if(!classId) { 
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted py-5 text-center">Vui lòng chọn lớp học phần</td></tr>'; 
+                statsArea.classList.add('d-none'); return; 
+            } 
+            
+            let data = await (await fetch(`/api/enrollments?class_id=${classId}`)).json(); 
+            if(data.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="7" class="text-warning py-5 text-center">Lớp này hiện chưa có sinh viên.</td></tr>'; 
+                statsArea.classList.add('d-none'); return; 
+            } 
+            
+            tbody.innerHTML = ''; 
+            let total = data.length; 
+            let passed = 0; 
+            let sumFinal = 0;
+            let nGioi = 0, nKha = 0, nTB = 0, nYeu = 0;
+
+            data.forEach(item => { 
+                let finalScore = (item.process * 0.1 + item.mid * 0.3 + item.final * 0.6);
+                sumFinal += finalScore;
+                let finalStr = finalScore.toFixed(1);
+                
+                // Style badge theo Vibe mới
+                let scoreBadge = finalScore >= 4.0 
+                    ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">${finalStr}</span>` 
+                    : `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill">${finalStr}</span>`; 
+                
+                if(finalScore >= 4.0) passed++; 
+                if(finalScore >= 8.0) nGioi++;
+                else if(finalScore >= 7.0) nKha++;
+                else if(finalScore >= 5.0) nTB++;
+                else nYeu++;
+
+                tbody.innerHTML += `
+                <tr>
+                    <td class="ps-4 fw-bold text-muted">${item.code}</td>
+                    <td class="text-start fw-bold text-dark">${item.name}</td>
+                    <td><input type="number" step="0.1" id="p_${item.enroll_id}" class="grade-input" value="${item.process}"></td>
+                    <td><input type="number" step="0.1" id="m_${item.enroll_id}" class="grade-input" value="${item.mid}"></td>
+                    <td><input type="number" step="0.1" id="f_${item.enroll_id}" class="grade-input" value="${item.final}"></td>
+                    <td><div class="d-flex justify-content-center">${scoreBadge}</div></td>
+                    <td><button class="btn btn-sm btn-primary-custom px-3" onclick="saveGrade(${item.enroll_id})"><i class="bi bi-floppy me-1"></i> Lưu</button></td>
+                </tr>`; 
+            }); 
+
+            document.getElementById('statTotal').innerText = total; 
+            document.getElementById('statPass').innerText = passed; 
+            document.getElementById('statFail').innerText = total - passed; 
+            document.getElementById('statAverage').innerText = (sumFinal / total).toFixed(2);
+
+            let pGioi = ((nGioi / total) * 100).toFixed(0);
+            let pKha = ((nKha / total) * 100).toFixed(0);
+            let pTB = ((nTB / total) * 100).toFixed(0);
+            let pYeu = ((nYeu / total) * 100).toFixed(0);
+
+            document.getElementById('labelGioi').innerText = `${nGioi} SV (${pGioi}%)`; document.getElementById('barGioi').style.width = pGioi + '%';
+            document.getElementById('labelKha').innerText = `${nKha} SV (${pKha}%)`; document.getElementById('barKha').style.width = pKha + '%';
+            document.getElementById('labelTB').innerText = `${nTB} SV (${pTB}%)`; document.getElementById('barTB').style.width = pTB + '%';
+            document.getElementById('labelYeu').innerText = `${nYeu} SV (${pYeu}%)`; document.getElementById('barYeu').style.width = pYeu + '%';
+
+            statsArea.classList.remove('d-none'); 
+        }
+
+        async function saveGrade(enrollId) { 
+            let p = document.getElementById(`p_${enrollId}`).value, m = document.getElementById(`m_${enrollId}`).value, f = document.getElementById(`f_${enrollId}`).value; 
+            await fetch('/api/update_grade', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ enroll_id: enrollId.toString(), process: p, mid: m, final: f }) }); 
+            
+            let btn = document.querySelector(`button[onclick="saveGrade(${enrollId})"]`); 
+            let originHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2-all"></i> Đã lưu'; 
+            btn.classList.replace('btn-primary-custom', 'btn-success'); 
+            setTimeout(() => { btn.innerHTML = originHtml; btn.classList.replace('btn-success', 'btn-primary-custom'); }, 2000); 
+            loadGrades(); 
+        }
+
+        async function loadCourses() { 
+            let curriculums = await (await fetch('/api/curriculums')).json(); 
+            document.getElementById('currSelectLec').innerHTML = '<option value="">-- Chọn Khung chương trình đào tạo --</option>' + curriculums.map(c => `<option value="${c.id}">${c.id} - Ngành ${c.major}</option>`).join(''); 
+            document.getElementById('currInfoCardLec').classList.add('d-none'); 
+            document.getElementById('semesterGroupAreaLec').innerHTML = ''; 
+        }
+        
+        async function renderCurriculumDetailsLec() { 
+            let currId = document.getElementById('currSelectLec').value; 
+            if(!currId) { document.getElementById('currInfoCardLec').classList.add('d-none'); document.getElementById('semesterGroupAreaLec').innerHTML = ''; return; } 
+            
+            let curriculums = await (await fetch('/api/curriculums')).json(); 
+            let currentCurr = curriculums.find(c => c.id === currId); 
+            
+            if(currentCurr) { 
+                document.getElementById('infoIdLec').innerText = currentCurr.id; 
+                document.getElementById('infoMajorLec').innerText = currentCurr.major; 
+                document.getElementById('infoIntakeLec').innerText = currentCurr.intake; 
+                document.getElementById('infoCreditsLec').innerText = currentCurr.total_credits + " Tín chỉ"; 
+                document.getElementById('currInfoCardLec').classList.remove('d-none'); 
+            } 
+            
+            let courses = await (await fetch(`/api/curriculum/courses?curriculum_id=${currId}`)).json(); 
+            let area = document.getElementById('semesterGroupAreaLec'); 
+            area.innerHTML = ''; 
+            
+            for(let sem = 1; sem <= 8; sem++) { 
+                let semCourses = courses.filter(c => c.semester === sem); 
+                if(semCourses.length === 0) continue; 
+                
+                let tbody = semCourses.map(c => { 
+                    let typeBadge = c.is_elective === 1 
+                        ? '<span class="badge" style="background-color: #f3e8ff; color: #9333ea; padding: 6px 12px; border-radius: 20px;">Tự chọn</span>' 
+                        : '<span class="badge" style="background-color: #e0e7ff; color: #4f46e5; padding: 6px 12px; border-radius: 20px;">Bắt buộc</span>'; 
+                    return `
+                        <tr>
+                            <td class="ps-4 fw-bold text-muted">${c.code}</td>
+                            <td class="text-start fw-medium text-dark">${c.name}</td>
+                            <td class="text-center fw-bold">${c.credits}</td>
+                            <td class="text-center">${typeBadge}</td>
+                            <td class="text-muted text-center">${c.prerequisite || '-'}</td>
+                        </tr>`; 
+                }).join(''); 
+                
+                area.innerHTML += `
+                    <div class="custom-card p-0 overflow-hidden mb-4">
+                        <div class="card-header-custom bg-light p-3 mb-0 border-bottom">
+                            <span class="fw-bold text-primary"><i class="bi bi-bookmark-star-fill me-2"></i>HỌC KỲ ${sem}</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-custom table-hover align-middle m-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Mã môn</th>
+                                        <th class="text-start">Tên môn học phần</th>
+                                        <th class="text-center">Số Tín Chỉ</th>
+                                        <th class="text-center">Khối kiến thức</th>
+                                        <th class="text-center">Môn tiên quyết</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tbody}</tbody>
+                            </table>
+                        </div>
+                    </div>`; 
+            } 
+        }
+
+        document.getElementById('changePassForm').onsubmit = async e => { 
+            e.preventDefault(); 
+            let oldP = document.getElementById('oldPass').value, newP = document.getElementById('newPass').value, confirmP = document.getElementById('confirmPass').value; 
+            
+            if (newP !== confirmP) { alert("Mật khẩu không khớp!"); return; } 
+            
+            const res = await fetch('/api/users/change_password', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ uid: loggedInUid, old_pass: oldP, new_pass: newP }) 
+            }); 
+            
+            if (res.ok) { 
+                alert("Đổi mật khẩu cá nhân thành công!"); 
+                let modalInst = bootstrap.Modal.getInstance(document.getElementById('changePassModal')); 
+                if(modalInst) modalInst.hide(); 
+                document.getElementById('changePassForm').reset();
+            } else { 
+                alert("Sai mật khẩu cũ!"); 
+            } 
+        };
+
+        // Init
+        loadProfile(); 
+        loadMyClasses();
+    </script>
+</body>
+</html>
