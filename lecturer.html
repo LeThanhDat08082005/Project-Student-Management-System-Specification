@@ -1,0 +1,45 @@
+// Chức năng Đổi mật khẩu cá nhân
+if (document.getElementById('changePassForm')) {
+    document.getElementById('changePassForm').onsubmit = async (e) => { 
+        e.preventDefault(); 
+        let oldP = document.getElementById('oldPass').value;
+        let newP = document.getElementById('newPass').value;
+        let confirmP = document.getElementById('confirmPass').value; 
+        
+        if (newP !== confirmP) { 
+            alert("Mật khẩu mới nhập lại không khớp!"); 
+            return; 
+        } 
+        
+        const loggedInUid = localStorage.getItem('loggedInUid');
+        try {
+            const res = await fetch('/api/users/change_password', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ uid: loggedInUid, old_pass: oldP, new_pass: newP }) 
+            }); 
+            
+            if (res.ok) { 
+                alert("Đổi mật khẩu cá nhân thành công!"); 
+                // Đóng modal hiển thị Bootstrap và reset lại Form dữ liệu
+                let modalInst = bootstrap.Modal.getInstance(document.getElementById('changePassModal')); 
+                if(modalInst) modalInst.hide(); 
+                document.getElementById('changePassForm').reset();
+            } else { 
+                const errData = await res.json();
+                alert(errData.error || "Mật khẩu cũ không chính xác!"); 
+            } 
+        } catch (error) {
+            alert("Lỗi kết nối máy chủ khi thực hiện đổi mật khẩu!");
+        }
+    };
+}
+
+// Chức năng Đăng xuất (Có thể gọi từ bất kỳ button Logout nào tại thanh Navigation)
+function logout() {
+    if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+        localStorage.removeItem('loggedInUid');
+        localStorage.removeItem('userRole');
+        window.location.href = 'login.html';
+    }
+}
