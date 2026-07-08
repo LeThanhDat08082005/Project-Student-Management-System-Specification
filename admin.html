@@ -1,4 +1,3 @@
-// Giao diện Quản trị viên
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1402,17 +1401,35 @@
 
         document.getElementById('addCourseForm').addEventListener('submit', async e => {
             e.preventDefault(); 
-            await fetch('/api/courses', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ code: document.getElementById('cCode').value, name: document.getElementById('cName').value, credits: document.getElementById('cCredits').value }) }); 
-            alert("Đã tạo Môn học thành công!");
-            document.getElementById('addCourseForm').reset(); loadCourseTab(); 
+            const payload = { code: document.getElementById('cCode').value, name: document.getElementById('cName').value, credits: document.getElementById('cCredits').value };
+            
+            let res = await fetch('/api/courses', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+            
+            if (res.ok) {
+                alert("Đã tạo Môn học thành công!");
+                document.getElementById('addCourseForm').reset(); 
+                loadCourseTab(); 
+            } else {
+                let errorData = await res.json();
+                alert("LỖI: " + (errorData.message || "Không thể tạo môn học."));
+            }
         });
 
         document.getElementById('addClassForm').addEventListener('submit', async e => {
             e.preventDefault(); 
             const payload = { code: document.getElementById('clCode').value, course_id: document.getElementById('clCourse').value, lecturer_id: document.getElementById('clLecturer').value, schedule_day: document.getElementById('clDay').value, schedule_time: document.getElementById('clTime').value, room: document.getElementById('clRoom').value }; 
-            await fetch('/api/classes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
-            alert("Đã phân công Lớp học phần thành công!");
-            document.getElementById('addClassForm').reset(); loadCourseTab(); initDashboard();
+            
+            let res = await fetch('/api/classes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+            
+            if (res.ok) {
+                alert("Đã phân công Lớp học phần thành công!");
+                document.getElementById('addClassForm').reset(); 
+                loadCourseTab(); 
+                initDashboard();
+            } else {
+                let errorData = await res.json();
+                alert("LỖI: " + (errorData.message || "Không thể mở lớp học phần."));
+            }
         });
 
         async function openClassStudentsModal(classId, classCode) {
