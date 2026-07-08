@@ -1,1 +1,1 @@
-# projec-Student-Management-System-Specification
+# Project-Student-Management-System-Specification
